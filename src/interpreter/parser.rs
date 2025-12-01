@@ -29,7 +29,7 @@ pub enum Command {
     Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32 },
     Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32 },
     Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32 },
-    Mesh { constants: Option<String>, file_path: String },
+    Mesh { constants: Option<String>, file_path: String, mtl_path: Option<String> },
     SetLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
     SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
@@ -53,7 +53,7 @@ impl Parser {
         Self { stack: VecDeque::new() }
     }
 
-    fn pop_optional_identifier(&mut self) -> Option<String> {
+    fn pop_optional_string(&mut self) -> Option<String> {
         if let Some(token) = self.stack.front() && token.token_type == TokenType::Identifier {
             let token = self.stack.pop_front().unwrap();
             return Some(token.value.clone())
@@ -61,7 +61,7 @@ impl Parser {
 
         None
     }
-    
+
     fn pop(&mut self) -> Result<Token, Box<dyn Error>> {
         if let Some(token) = self.stack.pop_front() {
             Ok(token)
@@ -134,7 +134,7 @@ impl Parser {
         let a = Parser::convert_to_f32(self.pop()?.value)?;
         let b = Parser::convert_to_f32(self.pop()?.value)?;
         let c = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_identifier();
+        let knob = self.pop_optional_string();
 
         Ok(Command::Move { a, b, c, knob })
     }
@@ -143,7 +143,7 @@ impl Parser {
         let a = Parser::convert_to_f32(self.pop()?.value)?;
         let b = Parser::convert_to_f32(self.pop()?.value)?;
         let c = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_identifier();
+        let knob = self.pop_optional_string();
 
         Ok(Command::Scale { a, b, c, knob })
     }
@@ -157,7 +157,7 @@ impl Parser {
             _ => return Err(format!("Invalid rotation axis: {}", axis_str).into()),
         };
         let degrees = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_identifier();
+        let knob = self.pop_optional_string();
 
         Ok(Command::Rotate { axis, degrees, knob })
     }
@@ -223,7 +223,7 @@ impl Parser {
     }
 
     fn handle_box(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_identifier();
+        let constants = self.pop_optional_string();
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
@@ -235,7 +235,7 @@ impl Parser {
     }
 
     fn handle_sphere(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_identifier();
+        let constants = self.pop_optional_string();
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
@@ -245,7 +245,7 @@ impl Parser {
     }
 
     fn handle_torus(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_identifier();
+        let constants = self.pop_optional_string();
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
@@ -256,10 +256,11 @@ impl Parser {
     }
 
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_identifier();
+        let constants = self.pop_optional_string();
         let file_path = self.pop()?.value;
+        let mtl_path = self.pop_optional_string();
 
-        Ok(Command::Mesh { constants, file_path })
+        Ok(Command::Mesh { constants, file_path, mtl_path }) 
     }
 
     fn handle_set_light(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -335,7 +336,7 @@ impl Parser {
 
     fn handle_save_knob_list(&mut self) -> Result<Command, Box<dyn Error>> {
         let name = self.pop()?.value;
-        
+
         Ok(Command::SaveKnobList { name })
     }
 
@@ -360,7 +361,7 @@ impl Parser {
         let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
         let start_val = Parser::convert_to_f32(self.pop()?.value)?;
         let end_val = Parser::convert_to_f32(self.pop()?.value)?;
-        
+
         Ok(Command::VaryKnob { knob, start_frame, end_frame, start_val, end_val })
     }
 

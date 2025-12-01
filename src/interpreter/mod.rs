@@ -4,6 +4,7 @@ mod parser;
 mod run_script;
 mod animation;
 mod coordinate_stack;
+mod mesh;
 
 use std::{
     error::Error,
