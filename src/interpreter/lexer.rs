@@ -23,7 +23,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
         let line = line.trim();
 
         // ignore comments
-        if line.starts_with("//") || line.starts_with("#") {
+        if line.starts_with("//") || line.starts_with("#") || line.is_empty() {
             continue;
         }
 

@@ -5,6 +5,6 @@ pub struct MTL {
     pub height: usize,
 }
 
-pub fn render_textured_polygon(polygon: &[f32; 4], vt: [[f32; 2]; 3], mtl: &MTL) {
-
+pub fn render_textured_polygon(polygon: &[[f32; 4]; 3], vt: [[f32; 2]; 3], mtl: &MTL) {
+    
 }
