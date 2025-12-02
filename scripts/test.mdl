@@ -1,2 +1,8 @@
+scale 50 50 50
+
+rotate y 30
+
 mesh
-../obj/test/test.obj
+../obj/airshow/airshow.obj
+
+display

@@ -1,18 +1,15 @@
 use super::read_lines;
 use image::ImageReader;
 use stl_io::read_stl;
-use crate::{render::{polygon_list::add_polygon, texture::{MTL, render_textured_polygon}, LightingConfig}, picture::Picture};
+use crate::{render::{polygon_list::add_polygon, texture::MTL}};
 use std::{
     collections::HashMap, error::Error, fs::OpenOptions, path::{Path, PathBuf}
 };
 
-type Matrix = Vec<[f32; 4]>;
-
 pub fn handle_mesh(
-    polygons: &mut Matrix,
+    polygons: &mut Vec<[f32; 4]>,
     file_path: String,
-    lighting_config: &LightingConfig
-) -> Result<bool, Box<dyn Error>> {
+) -> Result<Option<(Vec<(String, [[f32; 2]; 3])>, HashMap<String, MTL>)>, Box<dyn Error>> {
     let file = Path::new(&file_path);
 
     if !file.exists() {
@@ -34,7 +31,7 @@ pub fn handle_mesh(
         let mut vertex_textures: Vec<[f32; 2]> = vec![];
         let mut mtl_path: Option<String> = None;
         let mut current_mtl: String = String::new(); 
-        let mut polygon_info: Vec<(String, [usize; 3])> = vec![];
+        let mut polygon_info: Vec<(String, [[f32; 2]; 3])> = vec![];
 
         for line in read_lines(&file_path)?.map_while(Result::ok) {
             let line = line.trim();
@@ -82,11 +79,19 @@ pub fn handle_mesh(
                         let vt1 = parse_vt(parts[2]);
                         let vt2 = parse_vt(parts[3]);
 
-                        polygon_info.push((current_mtl.clone(), [vt0, vt1, vt2]));
+                        polygon_info.push((current_mtl.clone(), [
+                            vertex_textures[vt0], 
+                            vertex_textures[vt1], 
+                            vertex_textures[vt2]
+                        ]));
 
                         if is_quad {
                             let vt3 = parse_vt(parts[4]);
-                            polygon_info.push((current_mtl.clone(), [vt0, vt2, vt3]));
+                            polygon_info.push((current_mtl.clone(), [
+                                vertex_textures[vt0], 
+                                vertex_textures[vt2], 
+                                vertex_textures[vt3]
+                            ]));
                         }
                     }
                 }
@@ -97,31 +102,8 @@ pub fn handle_mesh(
 
         // if mtl is enabled render here otherwise allow the handle_mesh function that calls this
         if let Some(mtl_path) = mtl_path {
-            let mtls = parse_mtl_from_obj(file, mtl_path.as_str())?;
-
-            let mut polygon_index = 0;
-
-            for (mtl, [vt0, vt1, vt2]) in polygon_info.iter() {
-                let triangle_slice: &[[f32; 4]; 3] = polygons[polygon_index..polygon_index + 3]
-                    .try_into()
-                    .expect("Polygon slice must be exactly 3 vertices");
-
-                render_textured_polygon(
-                    triangle_slice,
-                    [vertex_textures[*vt0], vertex_textures[*vt1], vertex_textures[*vt2]],
-                    mtls.get(mtl).unwrap(),
-                    &lighting_config.point_light_vector,
-                );
-
-                polygon_index += 3; // move to next triangle
-            }
-
-            polygons.clear();
-            Ok(false)
-        } else {
-            Ok(true)
+            return Ok(Some((polygon_info, parse_mtl_from_obj(file, mtl_path.as_str())?)))
         }
-
     } else {
         // i originally had this hand parsed using ascii along with the .obj, but i wanted more flexibility and binary stls are annoying to parse
         let mut file = OpenOptions::new().read(true).open(file_path).unwrap();
@@ -135,9 +117,9 @@ pub fn handle_mesh(
                 polygon.vertices[2][0], polygon.vertices[2][1], polygon.vertices[2][2],
             );
         }
-
-        Ok(true)
     }
+
+    Ok(None)
 }
 
 pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<HashMap<String, MTL>, Box<dyn Error>> {
@@ -146,7 +128,7 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
 
     let mut mtls = HashMap::new();
     let mut current_name = String::new();
-    let mut current_kd = (255, 255, 255);
+    let mut current_kd = (1.0, 1.0, 1.0);
     let mut current_texture: Option<PathBuf> = None;
 
     for line in read_lines(&mtl_path)?.map_while(Result::ok) {
@@ -161,13 +143,13 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
                     mtls.insert(current_name.clone(), mtl);
                 }
                 current_name = parts[1].to_string();
-                current_kd = (255, 255, 255);
+                current_kd = (1.0, 1.0, 1.0);
                 current_texture = None;
             }
             "Kd" => {
-                let r = (parts[1].parse::<f32>()? * 255.0) as usize;
-                let g = (parts[2].parse::<f32>()? * 255.0) as usize;
-                let b = (parts[3].parse::<f32>()? * 255.0) as usize;
+                let r = parts[1].parse::<f32>()?;
+                let g = parts[2].parse::<f32>()?;
+                let b = parts[3].parse::<f32>()?;
                 current_kd = (r, g, b);
             }
             "map_Kd" => {
@@ -186,8 +168,8 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
     Ok(mtls)
 }
 
-fn load_texture(path: &Path, kd: (usize, usize, usize)) -> MTL{
-    let img = ImageReader::open(path).unwrap().decode().unwrap().to_rgba8();
+fn load_texture(path: &Path, kd: (f32, f32, f32)) -> MTL {
+    let img = ImageReader::open(path).unwrap().decode().unwrap().to_rgb8();
     let (width, height) = img.dimensions();
     MTL {
         kd,

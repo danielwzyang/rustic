@@ -13,5 +13,7 @@ run:
 	${RUN} ${SCRIPT}
 
 clean:
-	rm *.ppm *.png *.gif
-	rm **/*.ppm **/*.png **/*.gif
+	rm *.ppm *.png *.gif **/*.ppm **/*.png **/*.gif
+
+animate:
+	animate temp_frames/*

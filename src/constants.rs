@@ -12,7 +12,7 @@ pub const ENABLE_Z_BUFFER: bool = true;
 pub const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ambient_light_color: [50.0, 50.0, 50.0],
     point_light_color: [255.0, 255.0, 255.0],
-    point_light_vector: [0.5, 0.75, 1.0],
+    point_light_vector: [0.0, 0.0, 1.0],
 };
 pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstants {
     ambient: [0.1, 0.1, 0.1],

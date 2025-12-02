@@ -13,6 +13,7 @@ use crate::{
         ReflectionConstants,
         edge_list::{add_bezier_curve, add_circle, add_edge, add_hermite_curve, render_edges},
         polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons},
+        texture::{MTL, render_textured_polygon},
     }, vector::{cross_product, dot_product, normalize_vector, subtract_vectors}
 };
 use super::{
@@ -69,13 +70,13 @@ impl ScriptContext {
         self.edges = matrix::new();
     }
 
-    fn render_polygons(&mut self, constants: &Option<String>) -> Result<(), Box<dyn Error>> {
+    fn render_polygons(&mut self, constants: &Option<String>) {
         let mut reflection_constants = &self.reflection_constants;
 
         if let Some(name) = constants && let Some(symbol) = self.symbols.get(name) {
             match symbol {
                 Symbol::Constants(constants) => reflection_constants = constants,
-                _ => return Err(format!("Expected symbol to be lighting constants: {}", name).into())
+                _ => panic!("Expected symbol to be lighting constants: {}", name)
             }
         }
 
@@ -84,8 +85,29 @@ impl ScriptContext {
 
         render_polygons(&self.polygons, &mut self.picture, &DEFAULT_FOREGROUND_COLOR, &self.shading_mode, &self.lighting_config, reflection_constants);
         self.polygons = matrix::new();
+    }
 
-        Ok(())
+    fn render_textured_polygons(&mut self, polygon_info: &Vec<(String, [[f32; 2]; 3])>, mtls: &HashMap<String, MTL>) {
+        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        matrix::multiply(&self.camera_matrix, &mut self.polygons);
+        
+        let mut polygon_index = 0;
+
+        for (mtl, [vt0, vt1, vt2]) in polygon_info.iter() {
+            let triangle_slice: &[[f32; 4]; 3] = self.polygons[polygon_index..polygon_index + 3].try_into().unwrap();
+
+            render_textured_polygon(
+                &mut self.picture,
+                triangle_slice,
+                [*vt0, *vt1, *vt2],
+                mtls.get(mtl).unwrap(),
+                &self.lighting_config.point_light_vector,
+            );
+
+            polygon_index += 3; 
+        }
+
+        self.polygons = matrix::new();
     }
 
     fn get_knob_value(&self, knob_name: &Option<String>) -> f32 {
@@ -213,27 +235,29 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
 
         Command::Polygon { x0, y0, z0, x1, y1, z1, x2, y2, z2 } => {
             add_polygon(&mut context.polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2);
-            context.render_polygons(&None)?;
+            context.render_polygons(&None);
         }
 
         Command::Box { constants, x, y, z, w, h, d } => {
             add_box(&mut context.polygons, x, y, z, w, h, d);
-            context.render_polygons(&constants)?;
+            context.render_polygons(&constants);
         }
 
         Command::Sphere { constants, x, y, z, r } => {
             add_sphere(&mut context.polygons, x, y, z, r);
-            context.render_polygons(&constants)?;
+            context.render_polygons(&constants);
         }
 
         Command::Torus { constants, x, y, z, r0, r1 } => {
             add_torus(&mut context.polygons, x, y, z, r0, r1);
-            context.render_polygons(&constants)?;
+            context.render_polygons(&constants);
         }
 
         Command::Mesh { constants, file_path } => {
-            if handle_mesh(&mut context.polygons, file_path, &context.lighting_config)? {
-                context.render_polygons(&constants)?;
+            if let Some((polygon_info, mtls)) = handle_mesh(&mut context.polygons, file_path)? {
+                context.render_textured_polygons(&polygon_info, &mtls);
+            } else {
+                context.render_polygons(&constants);
             }
         }
 
