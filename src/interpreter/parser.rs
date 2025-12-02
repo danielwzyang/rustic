@@ -29,7 +29,7 @@ pub enum Command {
     Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32 },
     Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32 },
     Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32 },
-    Mesh { constants: Option<String>, file_path: String, mtl_path: Option<String> },
+    Mesh { constants: Option<String>, file_path: String },
     SetLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
     SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
@@ -258,9 +258,8 @@ impl Parser {
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_string();
         let file_path = self.pop()?.value;
-        let mtl_path = self.pop_optional_string();
 
-        Ok(Command::Mesh { constants, file_path, mtl_path }) 
+        Ok(Command::Mesh { constants, file_path }) 
     }
 
     fn handle_set_light(&mut self) -> Result<Command, Box<dyn Error>> {

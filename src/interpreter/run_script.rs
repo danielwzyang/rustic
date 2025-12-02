@@ -231,9 +231,10 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
             context.render_polygons(&constants)?;
         }
 
-        Command::Mesh { constants, file_path, mtl_path } => {
-            handle_mesh(&mut context.polygons, file_path, mtl_path)?;
-            context.render_polygons(&constants)?;
+        Command::Mesh { constants, file_path } => {
+            if handle_mesh(&mut context.polygons, file_path)? {
+                context.render_polygons(&constants)?;
+            }
         }
 
         Command::SetLight { r, g, b, x, y, z } => {
