@@ -41,32 +41,31 @@ pub fn render_polygons(
     match shading_mode {
         ShadingMode::Gouraud | ShadingMode::Phong => {
             for polygon in m.chunks(3) {
-            let a = [
-                polygon[1][0] - polygon[0][0],
-                polygon[1][1] - polygon[0][1],
-                polygon[1][2] - polygon[0][2],
-            ];
+                let a = [
+                    polygon[1][0] - polygon[0][0],
+                    polygon[1][1] - polygon[0][1],
+                    polygon[1][2] - polygon[0][2],
+                ];
 
-            let b = [
-                polygon[2][0] - polygon[0][0],
-                polygon[2][1] - polygon[0][1],
-                polygon[2][2] - polygon[0][2],
-            ];
+                let b = [
+                    polygon[2][0] - polygon[0][0],
+                    polygon[2][1] - polygon[0][1],
+                    polygon[2][2] - polygon[0][2],
+                ];
 
-            // calculate the normal for backface culling using the cross product of two edges
-            let normal = cross_product(&a, &b);
+                // calculate the normal for backface culling using the cross product of two edges
+                let normal = cross_product(&a, &b);
 
-            for vertex in polygon {
-                let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);
+                for vertex in polygon {
+                    let entry = vertex_normals.entry(vector_to_key(&vertex)).or_insert([0.0, 0.0, 0.0]);
 
-                *entry = add_vectors(&entry, &normal);
+                    *entry = add_vectors(&entry, &normal);
+                }
+
+                for normal in vertex_normals.values_mut() {
+                    *normal = normalize_vector(normal);
+                }
             }
-
-            for normal in vertex_normals.values_mut() {
-                *normal = normalize_vector(normal);
-            }
-        }
-
         }
         _ => {}
     }
