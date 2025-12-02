@@ -232,7 +232,7 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
         }
 
         Command::Mesh { constants, file_path } => {
-            if handle_mesh(&mut context.polygons, file_path)? {
+            if handle_mesh(&mut context.polygons, file_path, &context.lighting_config)? {
                 context.render_polygons(&constants)?;
             }
         }

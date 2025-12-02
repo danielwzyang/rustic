@@ -1,7 +1,7 @@
 use super::read_lines;
 use image::ImageReader;
 use stl_io::read_stl;
-use crate::{render::{polygon_list::add_polygon, texture::{MTL, render_textured_polygon}}};
+use crate::{render::{polygon_list::add_polygon, texture::{MTL, render_textured_polygon}, LightingConfig}, picture::Picture};
 use std::{
     collections::HashMap, error::Error, fs::OpenOptions, path::{Path, PathBuf}
 };
@@ -11,6 +11,7 @@ type Matrix = Vec<[f32; 4]>;
 pub fn handle_mesh(
     polygons: &mut Matrix,
     file_path: String,
+    lighting_config: &LightingConfig
 ) -> Result<bool, Box<dyn Error>> {
     let file = Path::new(&file_path);
 
@@ -109,6 +110,7 @@ pub fn handle_mesh(
                     triangle_slice,
                     [vertex_textures[*vt0], vertex_textures[*vt1], vertex_textures[*vt2]],
                     mtls.get(mtl).unwrap(),
+                    &lighting_config.point_light_vector,
                 );
 
                 polygon_index += 3; // move to next triangle
@@ -190,7 +192,7 @@ fn load_texture(path: &Path, kd: (usize, usize, usize)) -> MTL{
     MTL {
         kd,
         data: img.into_vec(),
-        width: width as usize,
-        height: height as usize,
+        width: width as isize,
+        height: height as isize,
     }
 }
