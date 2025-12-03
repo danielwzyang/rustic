@@ -128,6 +128,7 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
 
     let mut mtls = HashMap::new();
     let mut current_name = String::new();
+    let mut current_ka = (0.0, 0.0, 0.0);
     let mut current_kd = (1.0, 1.0, 1.0);
     let mut current_texture: Option<PathBuf> = None;
 
@@ -139,12 +140,19 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
         match parts[0] {
             "newmtl" => {
                 if !current_name.is_empty() {
-                    let mtl = load_texture(&current_texture.unwrap(), current_kd);
+                    let mtl = load_texture(&current_texture.unwrap(), current_ka, current_kd);
                     mtls.insert(current_name.clone(), mtl);
                 }
                 current_name = parts[1].to_string();
+                current_ka = (0.0, 0.0, 0.0);
                 current_kd = (1.0, 1.0, 1.0);
                 current_texture = None;
+            }
+            "Ka" => {
+                let r = parts[1].parse::<f32>()?;
+                let g = parts[2].parse::<f32>()?;
+                let b = parts[3].parse::<f32>()?;
+                current_ka = (r, g, b);
             }
             "Kd" => {
                 let r = parts[1].parse::<f32>()?;
@@ -161,17 +169,18 @@ pub fn parse_mtl_from_obj(obj_path: &Path, mtl_relative_path: &str) -> Result<Ha
 
     // save the last mtl
     if !current_name.is_empty() {
-        let mtl = load_texture(&current_texture.unwrap(), current_kd);
+        let mtl = load_texture(&current_texture.unwrap(), current_ka, current_kd);
         mtls.insert(current_name.clone(), mtl);
     }
 
     Ok(mtls)
 }
 
-fn load_texture(path: &Path, kd: (f32, f32, f32)) -> MTL {
+fn load_texture(path: &Path, ka: (f32, f32, f32), kd: (f32, f32, f32)) -> MTL {
     let img = ImageReader::open(path).unwrap().decode().unwrap().to_rgb8();
     let (width, height) = img.dimensions();
     MTL {
+        ka,
         kd,
         data: img.into_vec(),
         width: width as isize,

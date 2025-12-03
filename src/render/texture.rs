@@ -4,6 +4,7 @@ use crate::{
 };
 
 pub struct MTL {
+    pub ka: (f32, f32, f32),
     pub kd: (f32, f32, f32),
     pub data: Vec<u8>,
     pub width: isize,
@@ -12,10 +13,10 @@ pub struct MTL {
 
 impl MTL {
     pub fn get_texture_color(&self, u: f32, v: f32) -> (u8, u8, u8) {
-        let u_clamped = u.clamp(0.0, 1.0);
-        let v_clamped = v.clamp(0.0, 1.0);
-        let x = ((u_clamped * (self.width - 1) as f32).floor() as usize).min(self.width as usize - 1);
-        let y = (((1.0 - v_clamped) * (self.height - 1) as f32).floor() as usize).min(self.height as usize - 1);
+        let u = u.fract();
+        let v = v.fract();
+        let x = (u * (self.width - 1) as f32).floor() as usize;
+        let y = ((1.0 - v) * (self.height - 1) as f32).floor() as usize;
         let i = (y * self.width as usize + x) * 3;
 
         (
@@ -153,8 +154,12 @@ fn draw_scanline(picture: &mut Picture, mut x0: isize, x1: isize, y: isize, mut 
 fn get_color(u0: f32, v0: f32, mtl: &MTL, dot: f32) -> (usize, usize, usize) {
     let texture_color = mtl.get_texture_color(u0, v0);
     (
-        (texture_color.0 as f32 * mtl.kd.0 * dot).clamp(0.0, 255.0) as usize,
-        (texture_color.1 as f32 * mtl.kd.1 * dot).clamp(0.0, 255.0) as usize,
-        (texture_color.2 as f32 * mtl.kd.2 * dot).clamp(0.0, 255.0) as usize,
+        process_color(texture_color.0, mtl.ka.0, mtl.kd.0, dot),
+        process_color(texture_color.1, mtl.ka.1, mtl.kd.1, dot),
+        process_color(texture_color.2, mtl.ka.2, mtl.kd.2, dot),
     )
+}
+
+fn process_color(texture_color: u8, ka: f32, kd: f32, dot: f32) -> usize {
+    ((texture_color as f32 / 255.0 * (ka + kd * dot)).clamp(0.0, 1.0) * 255.0) as usize
 }
