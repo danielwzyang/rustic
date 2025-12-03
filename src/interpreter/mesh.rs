@@ -8,9 +8,9 @@ use std::{
 
 pub fn handle_mesh(
     polygons: &mut Vec<[f32; 4]>,
-    file_path: String,
+    file_path: &String,
 ) -> Result<Option<(Vec<(String, [[f32; 2]; 3])>, HashMap<String, MTL>)>, Box<dyn Error>> {
-    let file = Path::new(&file_path);
+    let file = Path::new(file_path);
 
     if !file.exists() {
         return Err(format!("Mesh file '{}' not found", file_path).into());

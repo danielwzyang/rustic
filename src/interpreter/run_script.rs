@@ -30,6 +30,11 @@ enum Symbol {
     Knob(f32),
 }
 
+enum CachedMesh {
+    NoTexture(Matrix),
+    Texture((Matrix, Vec<(String, [[f32; 2]; 3])>, HashMap<String, MTL>)),
+}
+
 struct ScriptContext {
     picture: Picture,
     edges: Matrix,
@@ -40,6 +45,7 @@ struct ScriptContext {
     reflection_constants: ReflectionConstants,
     camera_matrix: Matrix,
     symbols: HashMap<String, Symbol>,
+    mesh_cache: HashMap<String, CachedMesh>,
 }
 
 impl ScriptContext {
@@ -54,6 +60,7 @@ impl ScriptContext {
             reflection_constants: DEFAULT_REFLECTION_CONSTANTS,
             camera_matrix: matrix::identity(),
             symbols: HashMap::new(),
+            mesh_cache: HashMap::new(),
         }
     }
 
@@ -254,10 +261,33 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
         }
 
         Command::Mesh { constants, file_path } => {
-            if let Some((polygon_info, mtls)) = handle_mesh(&mut context.polygons, file_path)? {
+            if let Some(cache) = context.mesh_cache.get_mut(&file_path) {
+                match cache {
+                    CachedMesh::NoTexture(polygons) => {
+                        context.polygons = polygons.to_vec();
+                        context.render_polygons(&constants);
+                    }
+                    CachedMesh::Texture((polygons, polygon_info, mtls)) => {
+                        context.polygons = polygons.to_vec();
+                        context.render_textured_polygons(&polygon_info, &mtls);
+                    }
+                }
+            } else if let Some((polygon_info, mtls)) = handle_mesh(&mut context.polygons, &file_path)? {
                 context.render_textured_polygons(&polygon_info, &mtls);
+                context.mesh_cache.insert(
+                    file_path,
+                    CachedMesh::Texture ((
+                        context.polygons.clone(),
+                        polygon_info,
+                        mtls,
+                    ))
+                );
             } else {
                 context.render_polygons(&constants);
+                context.mesh_cache.insert(
+                    file_path,
+                    CachedMesh::NoTexture ( context.polygons.clone() )
+                );
             }
         }
 
