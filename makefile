@@ -17,3 +17,6 @@ clean:
 
 animate:
 	animate temp_frames/*
+
+gif:
+	convert -delay 1.7 temp_frames/*.png output.gif

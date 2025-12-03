@@ -7,17 +7,17 @@ pub struct MTL {
     pub ka: (f32, f32, f32),
     pub kd: (f32, f32, f32),
     pub data: Vec<u8>,
-    pub width: isize,
-    pub height: isize,
+    pub width: usize,
+    pub height: usize,
 }
 
 impl MTL {
     pub fn get_texture_color(&self, u: f32, v: f32) -> (u8, u8, u8) {
         let u = u.fract();
         let v = v.fract();
-        let x = (u * (self.width - 1) as f32).floor() as usize;
-        let y = ((1.0 - v) * (self.height - 1) as f32).floor() as usize;
-        let i = (y * self.width as usize + x) * 3;
+        let x = ((u * (self.width - 1) as f32).floor() as usize).min(self.width - 1);
+        let y = (((1.0 - v) * (self.height - 1) as f32).floor() as usize).min(self.height - 1);
+        let i = (y * self.width + x) * 3;
 
         (
             self.data[i],

@@ -1,0 +1,10 @@
+move 250 100 0
+scale 15 15 15
+rotate x 10
+rotate y 20
+
+mesh
+../obj/nebuc/nebuc.obj
+
+save nebuc.png
+display

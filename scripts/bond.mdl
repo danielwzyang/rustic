@@ -1,0 +1,14 @@
+# https://sketchfab.com/3d-models/goldeneye-007-n64-james-bond-c7421e107d1e4e06bfbf63af1021b16f
+
+frames 200
+basename bond
+
+move 250 50 0
+scale 6 6 6
+rotate x 20
+rotate y 360 spin
+
+mesh
+../obj/bond/bond.obj
+
+vary spin 0 199 0 1

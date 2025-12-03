@@ -183,7 +183,7 @@ fn load_texture(path: &Path, ka: (f32, f32, f32), kd: (f32, f32, f32)) -> MTL {
         ka,
         kd,
         data: img.into_vec(),
-        width: width as isize,
-        height: height as isize,
+        width: width as usize,
+        height: height as usize,
     }
 }
