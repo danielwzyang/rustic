@@ -261,32 +261,44 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
         }
 
         Command::Mesh { constants, file_path } => {
-            if let Some(cache) = context.mesh_cache.get_mut(&file_path) {
+            let mut polygons: Matrix = vec![];
+            let mut polygon_info: Vec<(String, [[f32; 2]; 3])> = vec![];
+            let mut mtls: HashMap<String, MTL> = HashMap::new();
+            if let Some(cache) = context.mesh_cache.get(&file_path) {
                 match cache {
-                    CachedMesh::NoTexture(polygons) => {
-                        context.polygons = polygons.to_vec();
-                        context.render_polygons(&constants);
-                    }
-                    CachedMesh::Texture((polygons, polygon_info, mtls)) => {
-                        context.polygons = polygons.to_vec();
-                        context.render_textured_polygons(&polygon_info, &mtls);
+                    CachedMesh::NoTexture(cache) => polygons = cache.clone(), 
+                    CachedMesh::Texture(cache) => {
+                        polygons = cache.0.clone();
+                        polygon_info = cache.1.clone();
+                        mtls = cache.2.clone();
                     }
                 }
+            }
+
+            if !polygons.is_empty() {
+                context.polygons = polygons.clone(); 
+                if !polygon_info.is_empty() {
+                    context.render_textured_polygons(&polygon_info, &mtls);
+                } else {
+                    context.render_polygons(&constants);
+                }
             } else if let Some((polygon_info, mtls)) = handle_mesh(&mut context.polygons, &file_path)? {
+                polygons = context.polygons.clone();
                 context.render_textured_polygons(&polygon_info, &mtls);
                 context.mesh_cache.insert(
                     file_path,
-                    CachedMesh::Texture ((
-                        context.polygons.clone(),
+                    CachedMesh::Texture((
+                        polygons,
                         polygon_info,
                         mtls,
                     ))
                 );
             } else {
+                polygons = context.polygons.clone();
                 context.render_polygons(&constants);
                 context.mesh_cache.insert(
                     file_path,
-                    CachedMesh::NoTexture ( context.polygons.clone() )
+                    CachedMesh::NoTexture(polygons)
                 );
             }
         }

@@ -3,6 +3,7 @@ use crate::{
     vector::{cross_product, dot_product, normalize_vector},
 };
 
+#[derive(Clone)]
 pub struct MTL {
     pub ka: (f32, f32, f32),
     pub kd: (f32, f32, f32),

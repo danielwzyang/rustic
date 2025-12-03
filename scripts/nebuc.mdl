@@ -6,5 +6,4 @@ rotate y 20
 mesh
 ../obj/nebuc/nebuc.obj
 
-save nebuc.png
 display
