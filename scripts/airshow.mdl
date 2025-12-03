@@ -1,0 +1,9 @@
+move 290 100 0
+scale 12 12 12
+rotate x 10
+rotate y 195
+
+mesh
+../obj/airshow/airshow.obj
+
+display
