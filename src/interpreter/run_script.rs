@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     constants::{
-        DEFAULT_ANIMATION_DELAY_MS, DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_LIGHTING_CONFIG, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, GENERATE_TEMPORARY_FRAME_FILES, ShadingMode
+        DEFAULT_ANIMATION_DELAY_MS, DEFAULT_BACKGROUND_COLOR, DEFAULT_FOREGROUND_COLOR, DEFAULT_PICTURE_DIMENSIONS, DEFAULT_REFLECTION_CONSTANTS, DEFAULT_SHADING_MODE, GENERATE_TEMPORARY_FRAME_FILES, ShadingMode
     }, interpreter::animation::Animation, matrix, render::{
         LightingConfig,
         Picture,
@@ -56,7 +56,10 @@ impl ScriptContext {
             polygons: matrix::new(),
             coordinate_stack: CoordinateStack::new(),
             shading_mode: DEFAULT_SHADING_MODE,
-            lighting_config: DEFAULT_LIGHTING_CONFIG,
+            lighting_config: LightingConfig {
+                ambient_light_color: [50.0, 50.0, 50.0],
+                point_lights: vec![[[255.0, 255.0, 255.0], [0.0, 0.0, 1.0]]],
+            },
             reflection_constants: DEFAULT_REFLECTION_CONSTANTS,
             camera_matrix: matrix::identity(),
             symbols: HashMap::new(),
@@ -108,7 +111,7 @@ impl ScriptContext {
                 triangle_slice,
                 [*vt0, *vt1, *vt2],
                 mtls.get(mtl).unwrap(),
-                &self.lighting_config.point_light_vector,
+                &self.lighting_config.point_lights[0][1], // too lazy to do multiple point lights for textures (might do later)
             );
 
             polygon_index += 3; 
@@ -304,8 +307,7 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
         }
 
         Command::SetLight { r, g, b, x, y, z } => {
-            context.lighting_config.point_light_color = [r, g, b];
-            context.lighting_config.point_light_vector = [x, y, z];
+            context.lighting_config.point_lights.push([[r, g, b], normalize_vector(&[x, y, z])]);
         }
 
         Command::SetAmbient { r, g, b } => {

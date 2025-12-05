@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::render::{LightingConfig, ReflectionConstants};
+use crate::render::ReflectionConstants;
 
 /* CONFIG */
 pub const DEFAULT_SCRIPT: &str = "scripts/stonehenge.mdl";
@@ -9,11 +9,6 @@ pub const DEFAULT_FOREGROUND_COLOR: (usize, usize, usize) = BLUE;
 pub const PARAMETRIC_STEPS: i32 = 50;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
-pub const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
-    ambient_light_color: [50.0, 50.0, 50.0],
-    point_light_color: [255.0, 255.0, 255.0],
-    point_light_vector: [0.0, 0.0, 1.0],
-};
 pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstants {
     ambient: [0.1, 0.1, 0.1],
     diffuse: [0.75, 0.25, 0.25],
