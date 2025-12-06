@@ -48,7 +48,6 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
                     token_type,
                 });
             } else if let Some(unknown) = captures.name("Unknown") {
-                println!("{:?}", tokens);
                 return Err(format!("{}:{} Token not recognized: {}", path, line_number + 1, unknown.as_str()).into());
             }
         }
