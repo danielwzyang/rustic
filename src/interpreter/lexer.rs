@@ -10,7 +10,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
     let token_regex = Regex::new(r"(?x)
         (?P<WhiteSpace> \s+) |
         (?P<Number> -?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?) |
-        (?P<FilePath>[A-Za-z0-9_]+\.[A-Za-z0-9]+) |
+        (?P<FilePath>(?:\./|\../|[A-Za-z0-9_\-]+/)*[A-Za-z0-9_\-]+\.[A-Za-z0-9]+) |
         (?P<Identifier> [a-zA-Z_][a-zA-Z0-9_]*) |
         (?P<Unknown> \S)"
     ).unwrap();
