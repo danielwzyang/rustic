@@ -8,8 +8,9 @@ use super::{tokens::{Token, TokenType}, read_lines};
 
 pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeque<Token>, Box<dyn Error>> {
     let token_regex = Regex::new(r"(?x)
+        (?P<Comment>//) |
         (?P<WhiteSpace> \s+) |
-        (?P<Number> -?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?) |
+        (?P<Number> -?(\d+\.?\d*|\.\d+)) |
         (?P<FilePath>(?:\./|\../|[A-Za-z0-9_\-]+/)*[A-Za-z0-9_\-]+\.[A-Za-z0-9]+) |
         (?P<Identifier> [a-zA-Z_][a-zA-Z0-9_]*) |
         (?P<Unknown> \S)"
@@ -21,12 +22,10 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
     for (line_number, line) in lines.map_while(Result::ok).enumerate() {
         let line = line.trim();
 
-        if line.starts_with("//") || line.starts_with("#") || line.is_empty() {
-            continue;
-        }
-
         for captures in token_regex.captures_iter(line) {
-            if captures.name("WhiteSpace").is_some() {
+            if captures.name("Comment").is_some() {
+                break;
+            } else if captures.name("WhiteSpace").is_some() {
                 continue;
             } else if let Some(number) = captures.name("Number") {
                 tokens.push_back(Token {

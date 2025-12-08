@@ -1,10 +1,10 @@
-# do some transformations to make it centered
+// do some transformations to make it centered
 scale
 2 2 2
 move
 5 -5 0
 
-# taken from some random svg
+// taken from some random svg
 bezier
 120.0 230.0 64.75 230.0 20.0 185.25 20.0 130.0
 bezier
