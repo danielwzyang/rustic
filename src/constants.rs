@@ -10,9 +10,9 @@ pub const PARAMETRIC_STEPS: i32 = 50;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
 pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstants {
-    ambient: [0.25, 0.25, 0.25],
-    diffuse: [0.25, 0.25, 0.25],
-    specular: [0.1, 0.1, 0.1],
+    ambient: [0.2, 0.2, 0.2],
+    diffuse: [0.5, 0.5, 0.5],
+    specular: [0.5, 0.5, 0.5],
 };
 #[derive(Clone, Copy, Debug)]
 pub enum ShadingMode {

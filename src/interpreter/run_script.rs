@@ -58,7 +58,7 @@ impl ScriptContext {
             shading_mode: DEFAULT_SHADING_MODE,
             lighting_config: LightingConfig {
                 ambient_light_color: [50.0, 50.0, 50.0],
-                point_lights: vec![[[255.0, 255.0, 255.0], [0.5, 0.75, 1.0]]],
+                point_lights: vec![[[255.0, 255.0, 255.0], normalize_vector(&[0.5, 0.75, 1.0])]],
             },
             reflection_constants: DEFAULT_REFLECTION_CONSTANTS,
             camera_matrix: matrix::identity(),
