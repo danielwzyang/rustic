@@ -42,6 +42,9 @@ pub enum Command {
     SetFrames { num_frames: usize },
     VaryKnob { knob: String, start_frame: usize, end_frame: usize, start_val: f32, end_val: f32 },
     SetAllKnobs { value: f32 },
+    SaveCoordSystem { name: String },
+    GenerateRayFiles,
+    SetFocalLength { length: f32 },
 }
 
 pub struct Parser {
@@ -51,6 +54,15 @@ pub struct Parser {
 impl Parser {
     pub fn new() -> Self {
         Self { stack: VecDeque::new() }
+    }
+    
+    fn pop_optional_number(&mut self) -> Option<f32> {
+        if let Some(token) = self.stack.front() && token.token_type == TokenType::Number {
+            let token = self.stack.pop_front().unwrap();
+            return Some(Parser::convert_to_f32(token.value).unwrap())
+        }
+
+        None
     }
 
     fn pop_optional_string(&mut self) -> Option<String> {
@@ -80,7 +92,6 @@ impl Parser {
 
             match token.token_type {
                 TokenType::Command(function) => {
-                    if matches!(function, Function::DNE) { continue; }
                     commands.push(
                         match function {
                             Function::Display => { Command::Display }
@@ -112,7 +123,9 @@ impl Parser {
                             Function::SetFrames => { self.handle_set_frames()? }
                             Function::VaryKnob => { self.handle_vary_knob()? }
                             Function::SetAllKnobs => { self.handle_set_all_knobs()? }
-                            Function::DNE => { panic!() } // filler code
+                            Function::SaveCoordSystem => { self.handle_save_coord_system()? }
+                            Function::GenerateRayFiles => { Command::GenerateRayFiles }
+                            Function::SetFocalLength => { self.handle_set_focal_length()? }
                         }
                     )
                 }
@@ -266,6 +279,7 @@ impl Parser {
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_string();
         let file_path = self.pop()?.value;
+        let _ = self.pop_optional_string(); // coord_system
 
         Ok(Command::Mesh { constants, file_path }) 
     }
@@ -300,6 +314,9 @@ impl Parser {
         let kab = Parser::convert_to_f32(self.pop()?.value)?;
         let kdb = Parser::convert_to_f32(self.pop()?.value)?;
         let ksb = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_number(); // r intensity
+        let _ = self.pop_optional_number(); // g intensity
+        let _ = self.pop_optional_number(); // b intensity
 
         Ok(Command::SetConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
     }
@@ -311,6 +328,7 @@ impl Parser {
             "flat" => ShadingMode::Flat,
             "gouraud" => ShadingMode::Gouraud,
             "phong" => ShadingMode::Phong,
+            "raytrace" => { println!("Raytracing shading is not supported. Using flat shading by default."); ShadingMode::Flat }
             _ => return Err(format!("Invalid shading mode: {}", mode_str).into()),
         };
 
@@ -378,6 +396,17 @@ impl Parser {
         Ok(Command::SetAllKnobs { value })
     }
 
+    fn handle_save_coord_system(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop()?.value;
+
+        Ok(Command::SaveCoordSystem { name })
+    }
+
+    fn handle_set_focal_length(&mut self) -> Result<Command, Box<dyn Error>> {
+        let length = Parser::convert_to_f32(self.pop()?.value)?;
+
+        Ok(Command::SetFocalLength { length })
+    }
 
     fn convert_to_f32(parameter: String) -> Result<f32, Box<dyn Error>> {
         Ok(parameter.parse().expect(format!("Error parsing float: {}", parameter).as_str()))

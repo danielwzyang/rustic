@@ -1,4 +1,4 @@
-RUN ?= WINIT_UNIX_BACKEND=x11 cargo run
+RUN ?= RUST_BACKTRACE=1 WINIT_UNIX_BACKEND=x11 cargo run
 DEFAULT ?= scripts/3dface.mdl
 CUSTOM ?= scripts/dino.mdl
 

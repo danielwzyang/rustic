@@ -57,5 +57,7 @@ pub enum Function {
     SetAllKnobs,
 
     // UNIMPLEMENTED BUT RECOGNIZED
-    DNE,
+    SaveCoordSystem,
+    GenerateRayFiles,
+    SetFocalLength,
 }
