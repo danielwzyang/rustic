@@ -80,6 +80,7 @@ impl Parser {
 
             match token.token_type {
                 TokenType::Command(function) => {
+                    if matches!(function, Function::DNE) { continue; }
                     commands.push(
                         match function {
                             Function::Display => { Command::Display }
@@ -111,6 +112,7 @@ impl Parser {
                             Function::SetFrames => { self.handle_set_frames()? }
                             Function::VaryKnob => { self.handle_vary_knob()? }
                             Function::SetAllKnobs => { self.handle_set_all_knobs()? }
+                            Function::DNE => { panic!() } // filler code
                         }
                     )
                 }
@@ -163,12 +165,15 @@ impl Parser {
     }
 
     fn handle_line(&mut self) -> Result<Command, Box<dyn Error>> {
+        let _ = self.pop_optional_string(); // constants
         let x0 = Parser::convert_to_f32(self.pop()?.value)?;
         let y0 = Parser::convert_to_f32(self.pop()?.value)?;
         let z0 = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_string(); // coord_system0
         let x1 = Parser::convert_to_f32(self.pop()?.value)?;
         let y1 = Parser::convert_to_f32(self.pop()?.value)?;
         let z1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_string(); // coord_system1
 
         Ok(Command::Line { x0, y0, z0, x1, y1, z1 })
     }
@@ -230,6 +235,7 @@ impl Parser {
         let w = Parser::convert_to_f32(self.pop()?.value)?;
         let h = Parser::convert_to_f32(self.pop()?.value)?;
         let d = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_string(); // coord_system
 
         Ok(Command::Box { constants, x, y, z, w, h, d })
     }
@@ -240,6 +246,7 @@ impl Parser {
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_string(); // coord_system
 
         Ok(Command::Sphere { constants, x, y, z, r })
     }
@@ -251,6 +258,7 @@ impl Parser {
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r0 = Parser::convert_to_f32(self.pop()?.value)?;
         let r1 = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_string(); // coord_system
 
         Ok(Command::Torus { constants, x, y, z, r0, r1 })
     }

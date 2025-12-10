@@ -55,4 +55,7 @@ pub enum Function {
     SetFrames,
     VaryKnob,
     SetAllKnobs,
+
+    // UNIMPLEMENTED BUT RECOGNIZED
+    DNE,
 }

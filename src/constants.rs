@@ -10,9 +10,9 @@ pub const PARAMETRIC_STEPS: i32 = 50;
 pub const ENABLE_BACK_FACE_CULLING: bool = true;
 pub const ENABLE_Z_BUFFER: bool = true;
 pub const DEFAULT_REFLECTION_CONSTANTS: ReflectionConstants = ReflectionConstants {
-    ambient: [0.1, 0.1, 0.1],
-    diffuse: [0.75, 0.25, 0.25],
-    specular: [0.25, 0.25, 0.75],
+    ambient: [0.25, 0.25, 0.25],
+    diffuse: [0.25, 0.25, 0.25],
+    specular: [0.1, 0.1, 0.1],
 };
 #[derive(Clone, Copy, Debug)]
 pub enum ShadingMode {
@@ -23,7 +23,7 @@ pub enum ShadingMode {
     Phong,
 }
 pub const DEFAULT_SHADING_MODE: ShadingMode = ShadingMode::Flat;
-pub const SPECULAR_EXPONENT: f32 = 4.0;
+pub const SPECULAR_EXPONENT: f32 = 5.0;
 pub const GENERATE_TEMPORARY_FRAME_FILES: bool = true;
 pub const DEFAULT_ANIMATION_DELAY_MS: u32 = 20; // for some reason when this is set to 10 ms it becomes really slow
 
