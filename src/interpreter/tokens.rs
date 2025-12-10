@@ -2,6 +2,7 @@
 pub struct Token {
     pub value: String,
     pub token_type: TokenType,
+    pub info: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

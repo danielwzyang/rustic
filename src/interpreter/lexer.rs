@@ -21,6 +21,7 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
 
     for (line_number, line) in lines.map_while(Result::ok).enumerate() {
         let line = line.trim();
+        let info = format!("{}:{}", path, line_number + 1).to_string();
 
         for captures in token_regex.captures_iter(line) {
             if captures.name("Comment").is_some() {
@@ -31,11 +32,13 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
                 tokens.push_back(Token {
                     value: number.as_str().to_string(),
                     token_type: TokenType::Number,
+                    info: info.clone(),
                 });
             } else if let Some(file_path) = captures.name("FilePath") {
                 tokens.push_back(Token {
                     value: file_path.as_str().to_string(),
                     token_type: TokenType::FilePath,
+                    info: info.clone(),
                 });
             } else if let Some(identifier) = captures.name("Identifier") {
                 let identifier = identifier.as_str();
@@ -45,9 +48,10 @@ pub fn tokenize(path: &str, keywords: HashMap<&str, TokenType>) -> Result<VecDeq
                 tokens.push_back(Token {
                     value: identifier.to_string(),
                     token_type,
+                    info: info.clone(),
                 });
             } else if let Some(unknown) = captures.name("Unknown") {
-                return Err(format!("{}:{} Token not recognized: {}", path, line_number + 1, unknown.as_str()).into());
+                return Err(format!("{} Token not recognized: {}", info, unknown.as_str()).into());
             }
         }
     }

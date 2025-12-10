@@ -10,7 +10,7 @@ use crate::{
 };
 use super::tokens::{Token, TokenType, Function};
 
-// file paths +  identifiers stored as String
+// file paths + identifiers stored as String
 #[derive(Clone, Debug)]
 pub enum Command {
     Display,
@@ -131,7 +131,7 @@ impl Parser {
                 }
 
                 _ => {
-                    return Err(format!("Unexpected token: {:?}", token).into())
+                    return Err(format!("{} -> Unexpected token: {} ({:?})", token.info, token.value, token.token_type).into())
                 }
             }
         }
