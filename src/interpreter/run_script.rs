@@ -306,7 +306,11 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
             }
         }
 
-        Command::SetLight { r, g, b, x, y, z } => {
+        Command::ClearLights => {
+            context.lighting_config.point_lights.clear();
+        }
+
+        Command::AddLight { r, g, b, x, y, z } => {
             context.lighting_config.point_lights.push([[r, g, b], normalize_vector(&[x, y, z])]);
         }
 

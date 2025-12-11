@@ -43,7 +43,8 @@ pub enum Function {
     Mesh,
 
     // LIGHTING
-    SetLight,
+    AddLight,
+    ClearLights,
     SetAmbient,
     SetConstants,
     SetShading,

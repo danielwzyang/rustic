@@ -30,7 +30,8 @@ pub enum Command {
     Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32 },
     Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32 },
     Mesh { constants: Option<String>, file_path: String },
-    SetLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
+    ClearLights,
+    AddLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
     SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
     SetShading { shading_mode: ShadingMode },
@@ -111,7 +112,8 @@ impl Parser {
                             Function::Sphere => { self.handle_sphere()? }
                             Function::Torus => { self.handle_torus()? }
                             Function::Mesh => { self.handle_mesh()? }
-                            Function::SetLight => { self.handle_set_light()? }
+                            Function::ClearLights => { Command::ClearLights }
+                            Function::AddLight => { self.handle_add_light()? }
                             Function::SetAmbient => { self.handle_set_ambient()? }
                             Function::SetConstants => { self.handle_set_constants()? }
                             Function::SetShading => { self.handle_set_shading()? }
@@ -284,7 +286,7 @@ impl Parser {
         Ok(Command::Mesh { constants, file_path }) 
     }
 
-    fn handle_set_light(&mut self) -> Result<Command, Box<dyn Error>> {
+    fn handle_add_light(&mut self) -> Result<Command, Box<dyn Error>> {
         let r = Parser::convert_to_f32(self.pop()?.value)?;
         let g = Parser::convert_to_f32(self.pop()?.value)?;
         let b = Parser::convert_to_f32(self.pop()?.value)?;
@@ -292,7 +294,7 @@ impl Parser {
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
 
-        Ok(Command::SetLight { r, g, b, x, y, z })
+        Ok(Command::AddLight { r, g, b, x, y, z })
     }
 
     fn handle_set_ambient(&mut self) -> Result<Command, Box<dyn Error>> {
