@@ -28,7 +28,8 @@ pub fn first_pass(commands: &Vec<Command>) -> Result<(usize, String), Box<dyn Er
     if (contains_vary || contains_tween || contains_basename) && !contains_frames {
         Err("Animation was detected but the number of frames wasn't set.".into())
     } else if contains_frames && !contains_basename {
-        Err("Number of frames was set but basename wasn't.".into())
+        println!("Number of frames was set but basename wasn't. 'frame' was chosen by default.");
+        Ok((frames, String::from("frame")))
     } else {
         Ok((frames, basename))
     }
