@@ -46,7 +46,7 @@ pub enum Function {
     AddLight,
     ClearLights,
     SetAmbient,
-    SetConstants,
+    DefineConstants,
     SetShading,
 
     // ANIMATION

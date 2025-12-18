@@ -150,7 +150,7 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
 
     if num_frames == 0 {
         for command in commands {
-            execute_command(command, &mut context)?;
+            execute_command(command, &mut context, false)?;
         }
     } else {
         let frame_knob_list = animation::second_pass(&commands, &num_frames)?;
@@ -164,7 +164,7 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
             }
 
             for command in commands.clone() {
-                execute_command(command, &mut context)?;
+                execute_command(command, &mut context, true)?;
             }
 
             if GENERATE_TEMPORARY_FRAME_FILES {
@@ -182,14 +182,18 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), Box<dyn Error>> {
+fn execute_command(command: Command, context: &mut ScriptContext, animation: bool) -> Result<(), Box<dyn Error>> {
     match command {
         Command::Display => {
-            context.picture.display()?
+            if !animation {
+                context.picture.display()?
+            }
         }
 
         Command::Save { file_path } => {
-            context.picture.save_as_file(&file_path)?
+            if !animation {
+                context.picture.save_as_file(&file_path)?
+            }
         }
 
         Command::Clear => {
@@ -211,11 +215,7 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
 
         Command::Scale { a, b, c, knob } => {
             let multiplier = context.get_knob_value(&knob);
-            // we need to make sure this goes from 1.0 -> a
-            let scale_a = 1.0 + (a - 1.0) * multiplier;
-            let scale_b = 1.0 + (b - 1.0) * multiplier;
-            let scale_c = 1.0 + (c - 1.0) * multiplier;
-            context.coordinate_stack.apply_transformation(matrix::dilation(scale_a, scale_b, scale_c));
+            context.coordinate_stack.apply_transformation(matrix::dilation(a * multiplier, b * multiplier, c * multiplier));
         }
 
         Command::Rotate { axis, degrees, knob } => {
@@ -318,14 +318,16 @@ fn execute_command(command: Command, context: &mut ScriptContext) -> Result<(), 
             context.lighting_config.ambient_light_color = [r, g, b];
         }
 
-        Command::SetConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb } => {
-            let constants = ReflectionConstants {
-                ambient: [kar, kag, kab],
-                diffuse: [kdr, kdg, kdb],
-                specular: [ksr, ksg, ksb],
-            };
+        Command::DefineConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb } => {
+            if !animation {
+                let constants = ReflectionConstants {
+                    ambient: [kar, kag, kab],
+                    diffuse: [kdr, kdg, kdb],
+                    specular: [ksr, ksg, ksb],
+                };
 
-            context.symbols.insert(name, Symbol::Constants(constants));
+                context.symbols.insert(name, Symbol::Constants(constants));
+            }
         }
 
         Command::SetShading { shading_mode } => {

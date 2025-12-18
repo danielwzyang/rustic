@@ -33,7 +33,7 @@ pub enum Command {
     ClearLights,
     AddLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
-    SetConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
+    DefineConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
     SetShading { shading_mode: ShadingMode },
     SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 },
     SetBaseName { name: String },
@@ -115,7 +115,7 @@ impl Parser {
                             Function::ClearLights => { Command::ClearLights }
                             Function::AddLight => { self.handle_add_light()? }
                             Function::SetAmbient => { self.handle_set_ambient()? }
-                            Function::SetConstants => { self.handle_set_constants()? }
+                            Function::DefineConstants => { self.handle_define_constants()? }
                             Function::SetShading => { self.handle_set_shading()? }
                             Function::SetCamera => { self.handle_set_camera()? }
                             Function::SetBaseName => { self.handle_set_base_name()? }
@@ -305,7 +305,7 @@ impl Parser {
         Ok(Command::SetAmbient { r, g, b })
     }
 
-    fn handle_set_constants(&mut self) -> Result<Command, Box<dyn Error>> {
+    fn handle_define_constants(&mut self) -> Result<Command, Box<dyn Error>> {
         let name = self.pop()?.value;
         let kar = Parser::convert_to_f32(self.pop()?.value)?;
         let kdr = Parser::convert_to_f32(self.pop()?.value)?;
@@ -320,7 +320,7 @@ impl Parser {
         let _ = self.pop_optional_number(); // g intensity
         let _ = self.pop_optional_number(); // b intensity
 
-        Ok(Command::SetConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
+        Ok(Command::DefineConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
     }
 
     fn handle_set_shading(&mut self) -> Result<Command, Box<dyn Error>> {
