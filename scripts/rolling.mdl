@@ -1,0 +1,33 @@
+frames 100
+basename rolling
+
+push
+move 250 250 0
+
+push
+rotate z 45 k1
+box -300 -50 0 600 50 20
+
+push
+move -250 0 0
+move 500 0 0 k0
+rotate z -360 spin
+sphere 0 0 0 50
+line 0 0 0 0 200 0
+pop
+pop
+
+//push
+rotate y 30
+set k0 1
+rotate z 90 k0
+scale 1 1 1 k3
+torus 0 0 0 25 100
+
+//display
+vary spin 0 49 0 1
+vary spin 50 99 0 2
+vary k0 0 99 0 1
+vary k1 0 49 1 1
+vary k1 50 99 1 -1
+vary k3 0 49 0 1
