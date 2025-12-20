@@ -62,7 +62,11 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("vary", TokenType::Command(Function::VaryKnob));
     map.insert("setknobs", TokenType::Command(Function::SetAllKnobs));
 
-    // unimplemented but recognized commands
+    map.insert("easeInCubic", TokenType::EasingFunction);
+    map.insert("easeOutCubic", TokenType::EasingFunction);
+    map.insert("easeInExpo", TokenType::EasingFunction);
+    map.insert("easeOutExpo", TokenType::EasingFunction);
+
     map.insert("save_coord_system", TokenType::Command(Function::SaveCoordSystem));
     map.insert("generate_rayfiles", TokenType::Command(Function::GenerateRayFiles));
     map.insert("focal", TokenType::Command(Function::SetFocalLength));

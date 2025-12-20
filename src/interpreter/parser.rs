@@ -39,9 +39,9 @@ pub enum Command {
     SetBaseName { name: String },
     SetKnob { name: String, value: f32 },
     SaveKnobList { name: String },
-    Tween { start_frame: usize, end_frame: usize, knoblist0: String, knoblist1: String },
+    Tween { start_frame: usize, end_frame: usize, knoblist0: String, knoblist1: String, easing: Option<String> },
     SetFrames { num_frames: usize },
-    VaryKnob { knob: String, start_frame: usize, end_frame: usize, start_val: f32, end_val: f32 },
+    VaryKnob { knob: String, start_frame: usize, end_frame: usize, start_val: f32, end_val: f32, easing: Option<String> },
     SetAllKnobs { value: f32 },
     SaveCoordSystem { name: String },
     GenerateRayFiles,
@@ -57,17 +57,8 @@ impl Parser {
         Self { stack: VecDeque::new() }
     }
     
-    fn pop_optional_number(&mut self) -> Option<f32> {
-        if let Some(token) = self.stack.front() && token.token_type == TokenType::Number {
-            let token = self.stack.pop_front().unwrap();
-            return Some(Parser::convert_to_f32(token.value).unwrap())
-        }
-
-        None
-    }
-
-    fn pop_optional_string(&mut self) -> Option<String> {
-        if let Some(token) = self.stack.front() && token.token_type == TokenType::Identifier {
+    fn pop_optional_type(&mut self, token_type: TokenType) -> Option<String> {
+        if let Some(token) = self.stack.front() && token.token_type == token_type {
             let token = self.stack.pop_front().unwrap();
             return Some(token.value.clone())
         }
@@ -151,7 +142,7 @@ impl Parser {
         let a = Parser::convert_to_f32(self.pop()?.value)?;
         let b = Parser::convert_to_f32(self.pop()?.value)?;
         let c = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_string();
+        let knob = self.pop_optional_type(TokenType::Identifier);
 
         Ok(Command::Move { a, b, c, knob })
     }
@@ -160,7 +151,7 @@ impl Parser {
         let a = Parser::convert_to_f32(self.pop()?.value)?;
         let b = Parser::convert_to_f32(self.pop()?.value)?;
         let c = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_string();
+        let knob = self.pop_optional_type(TokenType::Identifier);
 
         Ok(Command::Scale { a, b, c, knob })
     }
@@ -174,21 +165,21 @@ impl Parser {
             _ => return Err(format!("Invalid rotation axis: {}", axis_str).into()),
         };
         let degrees = Parser::convert_to_f32(self.pop()?.value)?;
-        let knob = self.pop_optional_string();
+        let knob = self.pop_optional_type(TokenType::Identifier);
 
         Ok(Command::Rotate { axis, degrees, knob })
     }
 
     fn handle_line(&mut self) -> Result<Command, Box<dyn Error>> {
-        let _ = self.pop_optional_string(); // constants
+        let _ = self.pop_optional_type(TokenType::Identifier); // constants
         let x0 = Parser::convert_to_f32(self.pop()?.value)?;
         let y0 = Parser::convert_to_f32(self.pop()?.value)?;
         let z0 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_string(); // coord_system0
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system0
         let x1 = Parser::convert_to_f32(self.pop()?.value)?;
         let y1 = Parser::convert_to_f32(self.pop()?.value)?;
         let z1 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_string(); // coord_system1
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system1
 
         Ok(Command::Line { x0, y0, z0, x1, y1, z1 })
     }
@@ -243,45 +234,45 @@ impl Parser {
     }
 
     fn handle_box(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_string();
+        let constants = self.pop_optional_type(TokenType::Identifier);
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let w = Parser::convert_to_f32(self.pop()?.value)?;
         let h = Parser::convert_to_f32(self.pop()?.value)?;
         let d = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_string(); // coord_system
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
 
         Ok(Command::Box { constants, x, y, z, w, h, d })
     }
 
     fn handle_sphere(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_string();
+        let constants = self.pop_optional_type(TokenType::Identifier);
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_string(); // coord_system
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
 
         Ok(Command::Sphere { constants, x, y, z, r })
     }
 
     fn handle_torus(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_string();
+        let constants = self.pop_optional_type(TokenType::Identifier);
         let x = Parser::convert_to_f32(self.pop()?.value)?;
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r0 = Parser::convert_to_f32(self.pop()?.value)?;
         let r1 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_string(); // coord_system
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
 
         Ok(Command::Torus { constants, x, y, z, r0, r1 })
     }
 
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
-        let constants = self.pop_optional_string();
+        let constants = self.pop_optional_type(TokenType::Identifier);
         let file_path = self.pop()?.value;
-        let _ = self.pop_optional_string(); // coord_system
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
 
         Ok(Command::Mesh { constants, file_path }) 
     }
@@ -316,9 +307,9 @@ impl Parser {
         let kab = Parser::convert_to_f32(self.pop()?.value)?;
         let kdb = Parser::convert_to_f32(self.pop()?.value)?;
         let ksb = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_number(); // r intensity
-        let _ = self.pop_optional_number(); // g intensity
-        let _ = self.pop_optional_number(); // b intensity
+        let _ = self.pop_optional_type(TokenType::Number); // r intensity
+        let _ = self.pop_optional_type(TokenType::Number); // g intensity
+        let _ = self.pop_optional_type(TokenType::Number); // b intensity
 
         Ok(Command::DefineConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
     }
@@ -372,8 +363,9 @@ impl Parser {
         let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
         let knoblist0 = self.pop()?.value;
         let knoblist1 = self.pop()?.value;
+        let easing = self.pop_optional_type(TokenType::EasingFunction);
 
-        Ok(Command::Tween { start_frame, end_frame, knoblist0, knoblist1 })
+        Ok(Command::Tween { start_frame, end_frame, knoblist0, knoblist1, easing })
     }
 
     fn handle_set_frames(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -388,8 +380,9 @@ impl Parser {
         let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
         let start_val = Parser::convert_to_f32(self.pop()?.value)?;
         let end_val = Parser::convert_to_f32(self.pop()?.value)?;
+        let easing = self.pop_optional_type(TokenType::EasingFunction);
 
-        Ok(Command::VaryKnob { knob, start_frame, end_frame, start_val, end_val })
+        Ok(Command::VaryKnob { knob, start_frame, end_frame, start_val, end_val, easing })
     }
 
     fn handle_set_all_knobs(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -411,10 +404,10 @@ impl Parser {
     }
 
     fn convert_to_f32(parameter: String) -> Result<f32, Box<dyn Error>> {
-        Ok(parameter.parse().expect(format!("Error parsing float: {}", parameter).as_str()))
+        parameter.parse::<f32>().map_err(|_| format!("Error parsing f32: {}", parameter).into())
     }
 
     fn convert_to_usize(parameter: String) -> Result<usize, Box<dyn Error>> {
-        Ok(parameter.parse().expect(format!("Error parsing usize: {}", parameter).as_str()))
+        parameter.parse::<usize>().map_err(|_| format!("Error parsing usize: {}", parameter).into())
     }
 }

@@ -12,6 +12,7 @@ pub enum TokenType {
     Number,
     FilePath,
     Identifier,
+    EasingFunction,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

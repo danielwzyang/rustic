@@ -1,0 +1,61 @@
+frames 200
+
+push
+
+clear_lights
+light 180 60 50 0.5 0.5 1.0
+move 100 100 0
+push
+move 300 0 0 k0
+rotate x 360 k0
+rotate y 360 k0
+torus 0 0 0 20 30
+pop
+
+clear_lights
+light 230 120 30 0.5 0.5 1.0
+move 0 100 0
+push
+move 300 0 0 k1
+rotate x 360 k1
+rotate y 360 k1
+torus 0 0 0 20 30
+pop
+
+clear_lights
+light 230 220 30 0.5 0.5 1.0
+move 0 100 0
+push
+move 300 0 0 k2
+rotate x 360 k2
+rotate y 360 k2
+torus 0 0 0 20 30
+pop
+
+clear_lights
+light 60 200 20 0.5 0.5 1.0
+move 0 100 0
+push
+move 300 0 0 k3
+rotate x 360 k3
+rotate y 360 k3
+torus 0 0 0 20 30
+pop
+
+pop
+
+vary k0 0 49 0 0
+vary k0 50 149 0 1 easeInCubic
+vary k0 150 199 1 1
+
+vary k1 0 49 0 0
+vary k1 50 149 0 1 easeOutCubic
+vary k1 150 199 1 1
+
+vary k2 0 49 0 0
+vary k2 50 149 0 1 easeInExpo
+vary k2 150 199 1 1
+
+vary k3 0 49 0 0
+vary k3 50 149 0 1 easeOutExpo
+vary k3 150 199 1 1
