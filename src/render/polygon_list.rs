@@ -326,74 +326,68 @@ pub fn add_cylinder(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32, h: f
     let points = generate_cylinder_points(cx, cy, cz, r, h);
     let length = (PARAMETRIC_STEPS * 2) as usize;
 
-    // sides
-    for i in (0..length).step_by(2) {
-        /*
-            3   1
+    for i in 0..length {
+        if i % 2 == 0 {
+            // bottom and sides
+            /*
+                3   1
 
 
-            2   0   
-        */
+                2   0   
+            */
 
-        let p0 = points[i];
-        let p1 = points[((i + 1) % length) as usize];
-        let p2 = points[((i + 2) % length) as usize];
-        let p3 = points[((i + 3) % length) as usize];
+            let p0 = points[i];
+            let p1 = points[((i + 1) % length) as usize];
+            let p2 = points[((i + 2) % length) as usize];
+            let p3 = points[((i + 3) % length) as usize];
 
-        // 0 1 2
-        add_polygon(m,
-            p0[0], p0[1], p0[2],
-            p1[0], p1[1], p1[2],
-            p2[0], p2[1], p2[2],
-        );
+            // 0 1 2
+            add_polygon(m,
+                p0[0], p0[1], p0[2],
+                p1[0], p1[1], p1[2],
+                p2[0], p2[1], p2[2],
+            );
 
-        // 1 3 2
-        add_polygon(m,
-            p1[0], p1[1], p1[2],
-            p3[0], p3[1], p3[2],
-            p2[0], p2[1], p2[2],
-        );
-    }
+            // 1 3 2
+            add_polygon(m,
+                p1[0], p1[1], p1[2],
+                p3[0], p3[1], p3[2],
+                p2[0], p2[1], p2[2],
+            );
 
-    // bottom
-    for i in (0..length).step_by(2) {
-        let p0 = points[i];
-        let p2 = points[((i + 2) % length) as usize];
+            // bottom from top view
+            /*
+                C
+                
+                    0
+                2
+            */
 
-        // bottom from top view
-        /*
-            C
-            
-                0
-            2
-        */
+            // ccw from bottom 0 2 C
+            add_polygon(m,
+                p0[0], p0[1], p0[2],
+                p2[0], p2[1], p2[2],
+                cx, cy, cz,
+            );
+        } else {
+            // top
+            let p1 = points[i];
+            let p3 = points[((i + 2) % length) as usize];
 
-        // ccw from bottom 0 2 C
-        add_polygon(m,
-            p0[0], p0[1], p0[2],
-            p2[0], p2[1], p2[2],
-            cx, cy, cz,
-        );
-    }
+            // top from top view
+            /*
+                C
+                
+                    1
+                3
+            */
 
-    // top
-    for i in (1..length).step_by(2) {
-        let p1 = points[i];
-        let p3 = points[((i + 2) % length) as usize];
-
-        // top from top view
-        /*
-            C
-            
-                1
-            3
-        */
-
-        add_polygon(m,
-            p1[0], p1[1], p1[2],
-            cx, cy + h, cz,
-            p3[0], p3[1], p3[2],
-        );
+            add_polygon(m,
+                p1[0], p1[1], p1[2],
+                cx, cy + h, cz,
+                p3[0], p3[1], p3[2],
+            );
+        }
     }
 } 
 
