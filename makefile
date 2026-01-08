@@ -8,9 +8,9 @@ default:
 custom:
 	${RUN} ${CUSTOM}
 
-# run with make run SCRIPT="path"
+# run with make run S="path"
 run:
-	${RUN} ${SCRIPT}
+	${RUN} ${S}
 
 clean:
 	rm *.ppm *.png *.gif **/*.ppm **/*.png **/*.gif
