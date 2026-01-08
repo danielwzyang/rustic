@@ -12,7 +12,7 @@ use crate::{
         Picture,
         ReflectionConstants,
         edge_list::{add_bezier_curve, add_circle, add_edge, add_hermite_curve, render_edges},
-        polygon_list::{add_box, add_polygon, add_sphere, add_torus, render_polygons},
+        polygon_list::{add_box, add_cylinder, add_polygon, add_sphere, add_torus, render_polygons},
         texture::{MTL, render_textured_polygon},
     }, vector::{cross_product, dot_product, normalize_vector, subtract_vectors}
 };
@@ -260,6 +260,11 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
 
         Command::Torus { constants, x, y, z, r0, r1 } => {
             add_torus(&mut context.polygons, x, y, z, r0, r1);
+            context.render_polygons(&constants);
+        }
+
+        Command::Cylinder { constants, x, y, z, r, h } => {
+            add_cylinder(&mut context.polygons, x, y, z, r, h);
             context.render_polygons(&constants);
         }
 

@@ -29,6 +29,7 @@ pub enum Command {
     Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32 },
     Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32 },
     Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32 },
+    Cylinder { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32 },
     Mesh { constants: Option<String>, file_path: String },
     ClearLights,
     AddLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
@@ -102,6 +103,7 @@ impl Parser {
                             Function::Box => { self.handle_box()? }
                             Function::Sphere => { self.handle_sphere()? }
                             Function::Torus => { self.handle_torus()? }
+                            Function::Cylinder => { self.handle_cylinder()? }
                             Function::Mesh => { self.handle_mesh()? }
                             Function::ClearLights => { Command::ClearLights }
                             Function::AddLight => { self.handle_add_light()? }
@@ -267,6 +269,18 @@ impl Parser {
         let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
 
         Ok(Command::Torus { constants, x, y, z, r0, r1 })
+    }
+
+    fn handle_cylinder(&mut self) -> Result<Command, Box<dyn Error>> {
+        let constants = self.pop_optional_type(TokenType::Identifier);
+        let x = Parser::convert_to_f32(self.pop()?.value)?;
+        let y = Parser::convert_to_f32(self.pop()?.value)?;
+        let z = Parser::convert_to_f32(self.pop()?.value)?;
+        let r = Parser::convert_to_f32(self.pop()?.value)?;
+        let h = Parser::convert_to_f32(self.pop()?.value)?;
+        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+
+        Ok(Command::Cylinder { constants, x, y, z, r, h })
     }
 
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {

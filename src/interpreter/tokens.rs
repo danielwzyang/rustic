@@ -41,6 +41,7 @@ pub enum Function {
     Box,
     Sphere,
     Torus,
+    Cylinder,
     Mesh,
 
     // LIGHTING

@@ -321,3 +321,96 @@ fn generate_torus_points(cx: f32, cy: f32, cz: f32, r1: f32, r2: f32) -> Vec<Vec
 
     point_list
 }
+
+pub fn add_cylinder(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32, h: f32) {
+    let points = generate_cylinder_points(cx, cy, cz, r, h);
+    let length = (PARAMETRIC_STEPS * 2) as usize;
+
+    // sides
+    for i in (0..length).step_by(2) {
+        /*
+            3   1
+
+
+            2   0   
+        */
+
+        let p0 = points[i];
+        let p1 = points[((i + 1) % length) as usize];
+        let p2 = points[((i + 2) % length) as usize];
+        let p3 = points[((i + 3) % length) as usize];
+
+        // 0 1 2
+        add_polygon(m,
+            p0[0], p0[1], p0[2],
+            p1[0], p1[1], p1[2],
+            p2[0], p2[1], p2[2],
+        );
+
+        // 1 3 2
+        add_polygon(m,
+            p1[0], p1[1], p1[2],
+            p3[0], p3[1], p3[2],
+            p2[0], p2[1], p2[2],
+        );
+    }
+
+    // bottom
+    for i in (0..length).step_by(2) {
+        let p0 = points[i];
+        let p2 = points[((i + 2) % length) as usize];
+
+        // bottom from top view
+        /*
+            C
+            
+                0
+            2
+        */
+
+        // ccw from bottom 0 2 C
+        add_polygon(m,
+            p0[0], p0[1], p0[2],
+            p2[0], p2[1], p2[2],
+            cx, cy, cz,
+        );
+    }
+
+    // top
+    for i in (1..length).step_by(2) {
+        let p1 = points[i];
+        let p3 = points[((i + 2) % length) as usize];
+
+        // top from top view
+        /*
+            C
+            
+                1
+            3
+        */
+
+        add_polygon(m,
+            p1[0], p1[1], p1[2],
+            cx, cy + h, cz,
+            p3[0], p3[1], p3[2],
+        );
+    }
+} 
+
+fn generate_cylinder_points(cx: f32, cy: f32, cz: f32, r: f32, h: f32) -> Vec<Vector> {
+    // x(t) = rcos(2 * pi * t) + cx
+    // z(t) = rsin(2 * pi * t) + cz
+    let x = |t: f32| r * (2.0 * PI * t).cos() + cx;
+    let z = |t: f32| r * (2.0 * PI * t).sin() + cz;
+
+    let mut point_list: Vec<Vector> = vec![];
+
+    for i in 0..PARAMETRIC_STEPS {
+        let t = i as f32 / PARAMETRIC_STEPS as f32;
+
+        point_list.push([x(t), cy, z(t)]);
+        point_list.push([x(t), cy + h, z(t)]);
+    }
+
+    point_list
+}

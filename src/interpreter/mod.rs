@@ -46,6 +46,7 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("box", TokenType::Command(Function::Box));
     map.insert("sphere", TokenType::Command(Function::Sphere));
     map.insert("torus", TokenType::Command(Function::Torus));
+    map.insert("cylinder", TokenType::Command(Function::Cylinder));
     map.insert("mesh", TokenType::Command(Function::Mesh));
 
     map.insert("light", TokenType::Command(Function::AddLight));
