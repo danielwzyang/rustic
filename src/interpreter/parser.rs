@@ -21,17 +21,17 @@ pub enum Command {
     Move { a: f32, b: f32, c: f32, knob: Option<String> },
     Scale { a: f32, b: f32, c: f32, knob: Option<String> },
     Rotate { axis: Rotation, degrees: f32, knob: Option<String> },
-    Line {  x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32 },
+    Line {  x0: f32, y0: f32, z0: f32, coord_system0: Option<String>, x1: f32, y1: f32, z1: f32, coord_system1: Option<String> },
     Circle { x: f32, y: f32, z: f32, r: f32 },
     Hermite { x0: f32, y0: f32, x1: f32, y1: f32, rx0: f32, ry0: f32, rx1: f32, ry1: f32 },
     Bezier { x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32 },
     Polygon { x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32 },
-    Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32 },
-    Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32 },
-    Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32 },
-    Cylinder { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32 },
-    Cone { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32 },
-    Mesh { constants: Option<String>, file_path: String },
+    Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32, coord_system: Option<String> },
+    Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, coord_system: Option<String> },
+    Torus { constants: Option<String>, x: f32, y: f32, z: f32, r0: f32, r1: f32, coord_system: Option<String> },
+    Cylinder { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32, coord_system: Option<String> },
+    Cone { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32, coord_system: Option<String> },
+    Mesh { constants: Option<String>, file_path: String, coord_system: Option<String> },
     ClearLights,
     AddLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
@@ -179,13 +179,13 @@ impl Parser {
         let x0 = Parser::convert_to_f32(self.pop()?.value)?;
         let y0 = Parser::convert_to_f32(self.pop()?.value)?;
         let z0 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system0
+        let coord_system0 = self.pop_optional_type(TokenType::Identifier);
         let x1 = Parser::convert_to_f32(self.pop()?.value)?;
         let y1 = Parser::convert_to_f32(self.pop()?.value)?;
         let z1 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system1
+        let coord_system1 = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Line { x0, y0, z0, x1, y1, z1 })
+        Ok(Command::Line { x0, y0, z0, coord_system0, x1, y1, z1, coord_system1 })
     }
 
     fn handle_circle(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -245,9 +245,9 @@ impl Parser {
         let w = Parser::convert_to_f32(self.pop()?.value)?;
         let h = Parser::convert_to_f32(self.pop()?.value)?;
         let d = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Box { constants, x, y, z, w, h, d })
+        Ok(Command::Box { constants, x, y, z, w, h, d, coord_system })
     }
 
     fn handle_sphere(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -256,9 +256,9 @@ impl Parser {
         let y = Parser::convert_to_f32(self.pop()?.value)?;
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Sphere { constants, x, y, z, r })
+        Ok(Command::Sphere { constants, x, y, z, r, coord_system })
     }
 
     fn handle_torus(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -268,9 +268,9 @@ impl Parser {
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r0 = Parser::convert_to_f32(self.pop()?.value)?;
         let r1 = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Torus { constants, x, y, z, r0, r1 })
+        Ok(Command::Torus { constants, x, y, z, r0, r1, coord_system })
     }
 
     fn handle_cylinder(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -280,9 +280,9 @@ impl Parser {
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r = Parser::convert_to_f32(self.pop()?.value)?;
         let h = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Cylinder { constants, x, y, z, r, h })
+        Ok(Command::Cylinder { constants, x, y, z, r, h, coord_system })
     }
 
     fn handle_cone(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -292,17 +292,17 @@ impl Parser {
         let z = Parser::convert_to_f32(self.pop()?.value)?;
         let r = Parser::convert_to_f32(self.pop()?.value)?;
         let h = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Cone { constants, x, y, z, r, h })
+        Ok(Command::Cone { constants, x, y, z, r, h, coord_system })
     }
 
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_type(TokenType::Identifier);
         let file_path = self.pop()?.value;
-        let _ = self.pop_optional_type(TokenType::Identifier); // coord_system
+        let coord_system = self.pop_optional_type(TokenType::Identifier);
 
-        Ok(Command::Mesh { constants, file_path }) 
+        Ok(Command::Mesh { constants, file_path, coord_system }) 
     }
 
     fn handle_add_light(&mut self) -> Result<Command, Box<dyn Error>> {

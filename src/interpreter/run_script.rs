@@ -28,6 +28,7 @@ type Matrix = Vec<[f32; 4]>;
 enum Symbol {
     Constants(ReflectionConstants),
     Knob(f32),
+    CoordSystem(Matrix),
 }
 
 enum CachedMesh {
@@ -74,13 +75,16 @@ impl ScriptContext {
         self.coordinate_stack = CoordinateStack::new();
     }
 
-    fn render_edges(&mut self) {
-        matrix::multiply(&self.coordinate_stack.peek(), &mut self.edges);
+    fn render_edges(&mut self, use_stack: bool) {
+        if use_stack {
+            matrix::multiply(&self.coordinate_stack.peek(), &mut self.edges);
+        }
+
         render_edges(&self.edges, &mut self.picture, &DEFAULT_FOREGROUND_COLOR);
         self.edges = matrix::new();
     }
 
-    fn render_polygons(&mut self, constants: &Option<String>) {
+    fn render_polygons(&mut self, constants: &Option<String>, use_stack: bool) {
         let mut reflection_constants = &self.reflection_constants;
 
         if let Some(name) = constants && let Some(symbol) = self.symbols.get(name) {
@@ -90,7 +94,10 @@ impl ScriptContext {
             }
         }
 
-        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        if use_stack {
+            matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        }
+
         matrix::multiply(&self.camera_matrix, &mut self.polygons);
 
         render_polygons(&self.polygons, &mut self.picture, &DEFAULT_FOREGROUND_COLOR, &self.shading_mode, &self.lighting_config, reflection_constants);
@@ -139,6 +146,14 @@ impl ScriptContext {
                 Symbol::Knob(old_value) => { *old_value = value }
                 _ => {}
             }
+        }
+    }
+    
+    fn apply_coord_system(&self, point: Matrix, coord_system: &Option<String>) -> Matrix {
+        if let Some(name) = coord_system && let Some(Symbol::CoordSystem(transform)) = self.symbols.get(name) {
+            matrix::multiply(transform, &mut self.polygons);
+        } else {
+            matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
         }
     }
 }
@@ -224,38 +239,43 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
             context.coordinate_stack.apply_transformation(matrix::rotation(axis, degrees * multiplier));
         }
 
-        Command::Line { x0, y0, z0, x1, y1, z1 } => {
-            add_edge(&mut context.edges, x0, y0, z0, x1, y1, z1);
-            context.render_edges();
+        Command::Line { x0, y0, z0, coord_system0, x1, y1, z1, coord_system1 } => {
+            let p0 = context.apply_coord_system(vec![[x0, y0, z0, 1.0]], &coord_system0)[0];
+            let p1 = context.apply_coord_system(vec![[x1, y1, z1, 1.0]], &coord_system1)[0];
+
+            add_edge(&mut context.edges, p0[0], p0[1], p0[2], p1[0], p1[1], p1[2]);
+            context.render_edges(false);
         }
 
         Command::Circle { x, y, z, r } => {
             add_circle(&mut context.edges, x, y, z, r);
-            context.render_edges();
+            context.render_edges(true);
         }
 
         Command::Hermite { x0, y0, x1, y1, rx0, ry0, rx1, ry1 } => {
             add_hermite_curve(&mut context.edges, x0, y0, x1, y1, rx0, ry0, rx1, ry1);
-            context.render_edges();
+            context.render_edges(true);
         }
 
         Command::Bezier { x0, y0, x1, y1, x2, y2, x3, y3 } => {
             add_bezier_curve(&mut context.edges, x0, y0, x1, y1, x2, y2, x3, y3);
-            context.render_edges();
+            context.render_edges(true);
         }
 
         Command::Polygon { x0, y0, z0, x1, y1, z1, x2, y2, z2 } => {
             add_polygon(&mut context.polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2);
-            context.render_polygons(&None);
+            context.render_polygons(&None, true);
         }
 
-        Command::Box { constants, x, y, z, w, h, d } => {
-            add_box(&mut context.polygons, x, y, z, w, h, d);
-            context.render_polygons(&constants);
+        Command::Box { constants, x, y, z, w, h, d, coord_system } => {
+            let p = context.apply_coord_system(vec![[x, y, z, 1.0]], &coord_system)[0];
+            add_box(&mut context.polygons, p[0], p[1], p[2], w, h, d);
+            context.render_polygons(&constants, false);
         }
 
-        Command::Sphere { constants, x, y, z, r } => {
-            add_sphere(&mut context.polygons, x, y, z, r);
+        Command::Sphere { constants, x, y, z, r, coord_system } => {
+            let p = context.apply_coord_system(vec![[x, y, z, 1.0]], &coord_system)[0];
+            add_sphere(&mut context.polygons, p[0], p[1], p[2], r);
             context.render_polygons(&constants);
         }
 
