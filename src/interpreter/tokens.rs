@@ -42,6 +42,7 @@ pub enum Function {
     Sphere,
     Torus,
     Cylinder,
+    Cone,
     Mesh,
 
     // LIGHTING

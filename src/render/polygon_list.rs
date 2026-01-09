@@ -367,7 +367,7 @@ pub fn add_cylinder(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32, h: f
             add_polygon(m,
                 p0[0], p0[1], p0[2],
                 p2[0], p2[1], p2[2],
-                cx, cy, cz,
+                cx, cy - h, cz,
             );
         } else {
             // top
@@ -384,7 +384,7 @@ pub fn add_cylinder(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32, h: f
 
             add_polygon(m,
                 p1[0], p1[1], p1[2],
-                cx, cy + h, cz,
+                cx, cy, cz,
                 p3[0], p3[1], p3[2],
             );
         }
@@ -402,8 +402,51 @@ fn generate_cylinder_points(cx: f32, cy: f32, cz: f32, r: f32, h: f32) -> Vec<Ve
     for i in 0..PARAMETRIC_STEPS {
         let t = i as f32 / PARAMETRIC_STEPS as f32;
 
+        point_list.push([x(t), cy - h, z(t)]);
         point_list.push([x(t), cy, z(t)]);
-        point_list.push([x(t), cy + h, z(t)]);
+    }
+
+    point_list
+}
+
+pub fn add_cone(m: &mut PolygonList, cx: f32, cy: f32, cz: f32, r: f32, h: f32) {
+    let points = generate_cone_points(cx, cy, cz, r);
+    let length = PARAMETRIC_STEPS as usize;
+    
+    for i in 0..length {
+        let p0 = points[i];
+        let p1 = points[(i + 1) % length];
+        
+        // triangle going to top
+        // 0 Ct 1
+        add_polygon(m,
+            p0[0], p0[1], p0[2],
+            cx, cy + h, cz,
+            p1[0], p1[1], p1[2],
+        );
+
+        // bottom
+        // 0 1 Cb
+        add_polygon(m,
+            p0[0], p0[1], p0[2],
+            p1[0], p1[1], p1[2],
+            cx, cy, cz,
+        );
+    }
+}
+
+fn generate_cone_points(cx: f32, cy: f32, cz: f32, r: f32) -> Vec<Vector> {
+    // x(t) = rcos(2 * pi * t) + cx
+    // z(t) = rsin(2 * pi * t) + cz
+    let x = |t: f32| r * (2.0 * PI * t).cos() + cx;
+    let z = |t: f32| r * (2.0 * PI * t).sin() + cz;
+    
+    let mut point_list: Vec<Vector> = vec![];
+
+    for i in 0..PARAMETRIC_STEPS {
+        let t = i as f32 / PARAMETRIC_STEPS as f32;
+
+        point_list.push([x(t), cy, z(t)]);
     }
 
     point_list
