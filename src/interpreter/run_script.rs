@@ -175,6 +175,7 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
         }
 
         if !GENERATE_TEMPORARY_FRAME_FILES {
+            println!("Writing gif, please wait.");
             gif.save_as_file(format!("{}.gif", basename), DEFAULT_ANIMATION_DELAY_MS)?;
         }
     }
