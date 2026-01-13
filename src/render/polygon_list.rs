@@ -61,10 +61,10 @@ pub fn render_polygons(
 
                     *entry = add_vectors(&entry, &normal);
                 }
+            }
 
-                for normal in vertex_normals.values_mut() {
-                    *normal = normalize_vector(normal);
-                }
+            for normal in vertex_normals.values_mut() {
+                *normal = normalize_vector(normal);
             }
         }
         _ => {}
