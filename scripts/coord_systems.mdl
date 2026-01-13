@@ -1,0 +1,62 @@
+shading gouraud
+
+frames 60
+basename coord_systems
+
+move -125 -125 0
+scale 1.5 1.5 1.5
+
+push
+// center
+move 250 250 0
+save_coord_system center
+
+// left
+push
+move -100 0 0
+rotate z 360 spin
+cone 0 -25 0 20 50
+pop
+// right
+push
+move 100 0 0
+rotate x 360 spin
+cone 0 -25 0 20 50
+pop
+
+move 0 100 0
+save_coord_system top
+// left
+push
+move -100 0 0
+rotate z 360 spin
+cylinder 0 25 0 20 50
+pop
+// right
+push
+move 100 0 0
+rotate x 360 spin
+cylinder 0 25 0 20 50
+pop
+
+move 0 -200 0
+save_coord_system bottom
+// left
+push
+move -100 0 0
+rotate z 360 spin
+sphere 0 0 0 20
+pop
+// right
+push
+move 100 0 0
+rotate x 360 spin
+sphere 0 0 0 20
+pop
+pop
+
+cone 0 -25 0 20 50 center
+cylinder 0 25 0 20 50 top
+sphere 0 0 0 20 bottom
+
+vary spin 0 59 0 1

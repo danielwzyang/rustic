@@ -75,26 +75,37 @@ impl ScriptContext {
         self.coordinate_stack = CoordinateStack::new();
     }
 
-    fn render_edges(&mut self, use_stack: bool) {
-        if use_stack {
-            matrix::multiply(&self.coordinate_stack.peek(), &mut self.edges);
-        }
+    fn render_edges(&mut self) {
+        matrix::multiply(&self.coordinate_stack.peek(), &mut self.edges);
 
         render_edges(&self.edges, &mut self.picture, &DEFAULT_FOREGROUND_COLOR);
         self.edges = matrix::new();
     }
 
-    fn render_polygons(&mut self, constants: &Option<String>, use_stack: bool) {
+    fn render_polygons(&mut self, constants: &Option<String>, coord_system: &Option<String>) {
         let mut reflection_constants = &self.reflection_constants;
 
-        if let Some(name) = constants && let Some(symbol) = self.symbols.get(name) {
-            match symbol {
-                Symbol::Constants(constants) => reflection_constants = constants,
-                _ => panic!("Expected symbol to be lighting constants: {}", name)
+        if let Some(name) = constants {
+            if let Some(symbol) = self.symbols.get(name) {
+                match symbol {
+                    Symbol::Constants(constants) => reflection_constants = constants,
+                    _ => panic!("Expected symbol to be lighting constants: {}", name)
+                }
+            } else {
+                panic!("Symbol not found in table: {}", name);
             }
         }
 
-        if use_stack {
+        if let Some(name) = coord_system {
+            if let Some(symbol) = self.symbols.get(name) {
+                match symbol {
+                    Symbol::CoordSystem(transform) => matrix::multiply(&transform, &mut self.polygons),
+                    _ => panic!("Expected symbol to be coordinate system: {}", name)
+                }
+            } else {
+                panic!("Symbol not found in table: {}", name);
+            }
+        } else {
             matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
         }
 
@@ -104,8 +115,20 @@ impl ScriptContext {
         self.polygons = matrix::new();
     }
 
-    fn render_textured_polygons(&mut self, polygon_info: &Vec<(String, [[f32; 2]; 3])>, mtls: &HashMap<String, MTL>) {
-        matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+    fn render_textured_polygons(&mut self, polygon_info: &Vec<(String, [[f32; 2]; 3])>, mtls: &HashMap<String, MTL>, coord_system: &Option<String>) {
+        if let Some(name) = coord_system {
+            if let Some(symbol) = self.symbols.get(name) {
+                match symbol {
+                    Symbol::CoordSystem(transform) => matrix::multiply(&transform, &mut self.polygons),
+                    _ => panic!("Expected symbol to be coordinate system: {}", name)
+                }
+            } else {
+                panic!("Symbol not found in table: {}", name);
+            }
+        } else {
+            matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
+        }
+
         matrix::multiply(&self.camera_matrix, &mut self.polygons);
         
         let mut polygon_index = 0;
@@ -148,13 +171,9 @@ impl ScriptContext {
             }
         }
     }
-    
-    fn apply_coord_system(&self, point: Matrix, coord_system: &Option<String>) -> Matrix {
-        if let Some(name) = coord_system && let Some(Symbol::CoordSystem(transform)) = self.symbols.get(name) {
-            matrix::multiply(transform, &mut self.polygons);
-        } else {
-            matrix::multiply(&self.coordinate_stack.peek(), &mut self.polygons);
-        }
+
+    fn save_coord_system(&mut self, name: String) {
+        self.symbols.insert(name, Symbol::CoordSystem(self.coordinate_stack.peek()));
     }
 }
 
@@ -239,62 +258,57 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
             context.coordinate_stack.apply_transformation(matrix::rotation(axis, degrees * multiplier));
         }
 
-        Command::Line { x0, y0, z0, coord_system0, x1, y1, z1, coord_system1 } => {
-            let p0 = context.apply_coord_system(vec![[x0, y0, z0, 1.0]], &coord_system0)[0];
-            let p1 = context.apply_coord_system(vec![[x1, y1, z1, 1.0]], &coord_system1)[0];
-
-            add_edge(&mut context.edges, p0[0], p0[1], p0[2], p1[0], p1[1], p1[2]);
-            context.render_edges(false);
+        Command::Line { x0, y0, z0, x1, y1, z1 } => {
+            add_edge(&mut context.edges, x0, y0, z0, x1, y1, z1);
+            context.render_edges();
         }
 
         Command::Circle { x, y, z, r } => {
             add_circle(&mut context.edges, x, y, z, r);
-            context.render_edges(true);
+            context.render_edges();
         }
 
         Command::Hermite { x0, y0, x1, y1, rx0, ry0, rx1, ry1 } => {
             add_hermite_curve(&mut context.edges, x0, y0, x1, y1, rx0, ry0, rx1, ry1);
-            context.render_edges(true);
+            context.render_edges();
         }
 
         Command::Bezier { x0, y0, x1, y1, x2, y2, x3, y3 } => {
             add_bezier_curve(&mut context.edges, x0, y0, x1, y1, x2, y2, x3, y3);
-            context.render_edges(true);
+            context.render_edges();
         }
 
-        Command::Polygon { x0, y0, z0, x1, y1, z1, x2, y2, z2 } => {
+        Command::Polygon { constants, x0, y0, z0, x1, y1, z1, x2, y2, z2, coord_system } => {
             add_polygon(&mut context.polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2);
-            context.render_polygons(&None, true);
+            context.render_polygons(&constants, &coord_system);
         }
 
         Command::Box { constants, x, y, z, w, h, d, coord_system } => {
-            let p = context.apply_coord_system(vec![[x, y, z, 1.0]], &coord_system)[0];
-            add_box(&mut context.polygons, p[0], p[1], p[2], w, h, d);
-            context.render_polygons(&constants, false);
+            add_box(&mut context.polygons, x, y, z, w, h, d);
+            context.render_polygons(&constants, &coord_system);
         }
 
         Command::Sphere { constants, x, y, z, r, coord_system } => {
-            let p = context.apply_coord_system(vec![[x, y, z, 1.0]], &coord_system)[0];
-            add_sphere(&mut context.polygons, p[0], p[1], p[2], r);
-            context.render_polygons(&constants);
+            add_sphere(&mut context.polygons, x, y, z, r);
+            context.render_polygons(&constants, &coord_system);
         }
 
-        Command::Torus { constants, x, y, z, r0, r1 } => {
+        Command::Torus { constants, x, y, z, r0, r1, coord_system } => {
             add_torus(&mut context.polygons, x, y, z, r0, r1);
-            context.render_polygons(&constants);
+            context.render_polygons(&constants, &coord_system);
         }
 
-        Command::Cylinder { constants, x, y, z, r, h } => {
+        Command::Cylinder { constants, x, y, z, r, h, coord_system } => {
             add_cylinder(&mut context.polygons, x, y, z, r, h);
-            context.render_polygons(&constants);
+            context.render_polygons(&constants, &coord_system);
         }
 
-        Command::Cone { constants, x, y, z, r, h } => {
+        Command::Cone { constants, x, y, z, r, h, coord_system } => {
             add_cone(&mut context.polygons, x, y, z, r, h);
-            context.render_polygons(&constants);
+            context.render_polygons(&constants, &coord_system);
         }
 
-        Command::Mesh { constants, file_path } => {
+        Command::Mesh { constants, file_path, coord_system } => {
             let mut polygons: Matrix = vec![];
             let mut polygon_info: Vec<(String, [[f32; 2]; 3])> = vec![];
             let mut mtls: HashMap<String, MTL> = HashMap::new();
@@ -312,13 +326,13 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
             if !polygons.is_empty() {
                 context.polygons = polygons.clone(); 
                 if !polygon_info.is_empty() {
-                    context.render_textured_polygons(&polygon_info, &mtls);
+                    context.render_textured_polygons(&polygon_info, &mtls, &coord_system);
                 } else {
-                    context.render_polygons(&constants);
+                    context.render_polygons(&constants, &coord_system);
                 }
             } else if let Some((polygon_info, mtls)) = handle_mesh(&mut context.polygons, &file_path)? {
                 polygons = context.polygons.clone();
-                context.render_textured_polygons(&polygon_info, &mtls);
+                context.render_textured_polygons(&polygon_info, &mtls, &coord_system);
                 context.mesh_cache.insert(
                     file_path,
                     CachedMesh::Texture((
@@ -329,7 +343,7 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
                 );
             } else {
                 polygons = context.polygons.clone();
-                context.render_polygons(&constants);
+                context.render_polygons(&constants, &coord_system);
                 context.mesh_cache.insert(
                     file_path,
                     CachedMesh::NoTexture(polygons)
@@ -394,6 +408,10 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
 
         Command::SetAllKnobs { value } => {
             context.set_all_knobs(value);
+        }
+
+        Command::SaveCoordSystem { name } => {
+            context.save_coord_system(name);
         }
 
         _ => { }
