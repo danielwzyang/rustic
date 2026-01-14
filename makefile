@@ -16,7 +16,7 @@ clean:
 	rm *.ppm *.png *.gif **/*.ppm **/*.png **/*.gif
 
 animate:
-	animate temp_frames/*.png
+	animate temp_frames/${B}*.png
 
 gif:
 	convert -delay 1.7 temp_frames/*.png output.gif
