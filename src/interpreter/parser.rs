@@ -48,6 +48,8 @@ pub enum Command {
     SaveCoordSystem { name: String },
     GenerateRayFiles,
     SetFocalLength { length: f32 },
+    CreateComposite { name: String, commands: Vec<Command> },
+    RunComposite { name: String },
 }
 
 pub struct Parser {
@@ -76,6 +78,18 @@ impl Parser {
         }
     }
 
+    fn pop_expected(&mut self, token_type: TokenType) -> Result<Token, Box<dyn Error>> {
+        if let Some(token) = self.stack.pop_front() {
+            if token.token_type == token_type {
+                Ok(token)
+            } else {
+                Err(format!("Expected token of type {:?} for {} but received {:?}.", token_type, token.value, token.token_type).into())
+            }
+        } else {
+            Err("Expected token but stack was empty.".into())
+        }
+    }
+
     pub fn generate_command_list(&mut self, tokens: VecDeque<Token>) -> Result<Vec<Command>, Box<dyn Error>> {
         let mut commands: Vec<Command> = vec![];
 
@@ -85,46 +99,48 @@ impl Parser {
             let token = self.pop()?;
 
             match token.token_type {
+                let command = get_command()?;
+
                 TokenType::Command(function) => {
-                    commands.push(
-                        match function {
-                            Function::Display => { Command::Display }
-                            Function::Save => { self.handle_save()? }
-                            Function::Clear => { Command::Clear }
-                            Function::Push => { Command::Push }
-                            Function::Pop => { Command::Pop }
-                            Function::Move => { self.handle_move()? }
-                            Function::Scale => { self.handle_scale()? }
-                            Function::Rotate => { self.handle_rotate()? }
-                            Function::Line => { self.handle_line()? }
-                            Function::Circle => { self.handle_circle()? }
-                            Function::Hermite => { self.handle_hermite()? }
-                            Function::Bezier => { self.handle_bezier()? }
-                            Function::Polygon => { self.handle_polygon()? }
-                            Function::Box => { self.handle_box()? }
-                            Function::Sphere => { self.handle_sphere()? }
-                            Function::Torus => { self.handle_torus()? }
-                            Function::Cylinder => { self.handle_cylinder()? }
-                            Function::Cone => { self.handle_cone()? }
-                            Function::Mesh => { self.handle_mesh()? }
-                            Function::ClearLights => { Command::ClearLights }
-                            Function::AddLight => { self.handle_add_light()? }
-                            Function::SetAmbient => { self.handle_set_ambient()? }
-                            Function::DefineConstants => { self.handle_define_constants()? }
-                            Function::SetShading => { self.handle_set_shading()? }
-                            Function::SetCamera => { self.handle_set_camera()? }
-                            Function::SetBaseName => { self.handle_set_base_name()? }
-                            Function::SetKnob => { self.handle_set_knob()? }
-                            Function::SaveKnobList => { self.handle_save_knob_list()? }
-                            Function::Tween => { self.handle_tween()? }
-                            Function::SetFrames => { self.handle_set_frames()? }
-                            Function::VaryKnob => { self.handle_vary_knob()? }
-                            Function::SetAllKnobs => { self.handle_set_all_knobs()? }
-                            Function::SaveCoordSystem => { self.handle_save_coord_system()? }
-                            Function::GenerateRayFiles => { Command::GenerateRayFiles }
-                            Function::SetFocalLength => { self.handle_set_focal_length()? }
-                        }
-                    )
+                    match function {
+                        Function::Display => { Command::Display }
+                        Function::Save => { self.handle_save()? }
+                        Function::Clear => { Command::Clear }
+                        Function::Push => { Command::Push }
+                        Function::Pop => { Command::Pop }
+                        Function::Move => { self.handle_move()? }
+                        Function::Scale => { self.handle_scale()? }
+                        Function::Rotate => { self.handle_rotate()? }
+                        Function::Line => { self.handle_line()? }
+                        Function::Circle => { self.handle_circle()? }
+                        Function::Hermite => { self.handle_hermite()? }
+                        Function::Bezier => { self.handle_bezier()? }
+                        Function::Polygon => { self.handle_polygon()? }
+                        Function::Box => { self.handle_box()? }
+                        Function::Sphere => { self.handle_sphere()? }
+                        Function::Torus => { self.handle_torus()? }
+                        Function::Cylinder => { self.handle_cylinder()? }
+                        Function::Cone => { self.handle_cone()? }
+                        Function::Mesh => { self.handle_mesh()? }
+                        Function::ClearLights => { Command::ClearLights }
+                        Function::AddLight => { self.handle_add_light()? }
+                        Function::SetAmbient => { self.handle_set_ambient()? }
+                        Function::DefineConstants => { self.handle_define_constants()? }
+                        Function::SetShading => { self.handle_set_shading()? }
+                        Function::SetCamera => { self.handle_set_camera()? }
+                        Function::SetBaseName => { self.handle_set_base_name()? }
+                        Function::SetKnob => { self.handle_set_knob()? }
+                        Function::SaveKnobList => { self.handle_save_knob_list()? }
+                        Function::Tween => { self.handle_tween()? }
+                        Function::SetFrames => { self.handle_set_frames()? }
+                        Function::VaryKnob => { self.handle_vary_knob()? }
+                        Function::SetAllKnobs => { self.handle_set_all_knobs()? }
+                        Function::SaveCoordSystem => { self.handle_save_coord_system()? }
+                        Function::GenerateRayFiles => { Command::GenerateRayFiles }
+                        Function::SetFocalLength => { self.handle_set_focal_length()? }
+                        Function::CreateComposite => { self.handle_create_composite()? }
+                        Function::RunComposite => { self.handle_run_composite()? }
+                    }
                 }
 
                 _ => {
@@ -137,7 +153,7 @@ impl Parser {
     }
 
     fn handle_save(&mut self) -> Result<Command, Box<dyn Error>> {
-        let file_path = self.pop()?.value;
+        let file_path = self.pop_expected(TokenType::FilePath)?.value;
 
         Ok(Command::Save { file_path })
     }
@@ -161,7 +177,7 @@ impl Parser {
     }
 
     fn handle_rotate(&mut self) -> Result<Command, Box<dyn Error>> {
-        let axis_str = self.pop()?.value.to_lowercase();
+        let axis_str = self.pop_expected(TokenType::AxisOfRotation)?.value.to_lowercase();
         let axis = match axis_str.as_str() {
             "x" => Rotation::X,
             "y" => Rotation::Y,
@@ -299,7 +315,7 @@ impl Parser {
 
     fn handle_mesh(&mut self) -> Result<Command, Box<dyn Error>> {
         let constants = self.pop_optional_type(TokenType::Identifier);
-        let file_path = self.pop()?.value;
+        let file_path = self.pop_expected(TokenType::FilePath)?.value;
         let coord_system = self.pop_optional_type(TokenType::Identifier);
 
         Ok(Command::Mesh { constants, file_path, coord_system }) 
@@ -325,7 +341,7 @@ impl Parser {
     }
 
     fn handle_define_constants(&mut self) -> Result<Command, Box<dyn Error>> {
-        let name = self.pop()?.value;
+        let name = self.pop_expected(TokenType::Identifier)?.value;
         let kar = Parser::convert_to_f32(self.pop()?.value)?;
         let kdr = Parser::convert_to_f32(self.pop()?.value)?;
         let ksr = Parser::convert_to_f32(self.pop()?.value)?;
@@ -335,21 +351,17 @@ impl Parser {
         let kab = Parser::convert_to_f32(self.pop()?.value)?;
         let kdb = Parser::convert_to_f32(self.pop()?.value)?;
         let ksb = Parser::convert_to_f32(self.pop()?.value)?;
-        let _ = self.pop_optional_type(TokenType::Number); // r intensity
-        let _ = self.pop_optional_type(TokenType::Number); // g intensity
-        let _ = self.pop_optional_type(TokenType::Number); // b intensity
 
         Ok(Command::DefineConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb })
     }
 
     fn handle_set_shading(&mut self) -> Result<Command, Box<dyn Error>> {
-        let mode_str = self.pop()?.value.to_lowercase();
+        let mode_str = self.pop_expected(TokenType::Identifier)?.value.to_lowercase();
         let shading_mode = match mode_str.as_str() {
             "wireframe" => ShadingMode::Wireframe,
             "flat" => ShadingMode::Flat,
             "gouraud" => ShadingMode::Gouraud,
             "phong" => ShadingMode::Phong,
-            "raytrace" => { println!("Raytracing shading is not supported. Using flat shading by default."); ShadingMode::Flat }
             _ => return Err(format!("Invalid shading mode: {}", mode_str).into()),
         };
 
@@ -368,29 +380,29 @@ impl Parser {
     }
 
     fn handle_set_base_name(&mut self) -> Result<Command, Box<dyn Error>> {
-        let name = self.pop()?.value;
+        let name = self.pop_expected(TokenType::Identifier)?.value;
 
         Ok(Command::SetBaseName { name })
     }
 
     fn handle_set_knob(&mut self) -> Result<Command, Box<dyn Error>> {
-        let name = self.pop()?.value;
+        let name = self.pop_expected(TokenType::Identifier)?.value;
         let value = Parser::convert_to_f32(self.pop()?.value)?;
 
         Ok(Command::SetKnob { name, value })
     }
 
     fn handle_save_knob_list(&mut self) -> Result<Command, Box<dyn Error>> {
-        let name = self.pop()?.value;
+        let name = self.pop_expected(TokenType::Identifier)?.value;
 
         Ok(Command::SaveKnobList { name })
     }
 
     fn handle_tween(&mut self) -> Result<Command, Box<dyn Error>> {
-        let start_frame = Parser::convert_to_usize(self.pop()?.value)?;
-        let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
-        let knoblist0 = self.pop()?.value;
-        let knoblist1 = self.pop()?.value;
+        let start_frame = Parser::convert_to_usize(self.pop_expected(TokenType::Number)?.value)?;
+        let end_frame = Parser::convert_to_usize(self.pop_expected(TokenType::Number)?.value)?;
+        let knoblist0 = self.pop_expected(TokenType::Identifier)?.value;
+        let knoblist1 = self.pop_expected(TokenType::Identifier)?.value;
         let easing = self.pop_optional_type(TokenType::EasingFunction);
 
         Ok(Command::Tween { start_frame, end_frame, knoblist0, knoblist1, easing })
@@ -403,7 +415,7 @@ impl Parser {
     }
 
     fn handle_vary_knob(&mut self) -> Result<Command, Box<dyn Error>> {
-        let knob = self.pop()?.value;
+        let knob = self.pop_expected(TokenType::Identifier)?.value;
         let start_frame = Parser::convert_to_usize(self.pop()?.value)?;
         let end_frame = Parser::convert_to_usize(self.pop()?.value)?;
         let start_val = Parser::convert_to_f32(self.pop()?.value)?;
@@ -414,21 +426,37 @@ impl Parser {
     }
 
     fn handle_set_all_knobs(&mut self) -> Result<Command, Box<dyn Error>> {
-        let value = Parser::convert_to_f32(self.pop()?.value)?;
+        let value = Parser::convert_to_f32(self.pop_expected(TokenType::Number)?.value)?;
 
         Ok(Command::SetAllKnobs { value })
     }
 
     fn handle_save_coord_system(&mut self) -> Result<Command, Box<dyn Error>> {
-        let name = self.pop()?.value;
+        let name = self.pop_expected(TokenType::Identifier)?.value;
 
         Ok(Command::SaveCoordSystem { name })
     }
 
     fn handle_set_focal_length(&mut self) -> Result<Command, Box<dyn Error>> {
-        let length = Parser::convert_to_f32(self.pop()?.value)?;
+        let length = Parser::convert_to_f32(self.pop_expected(TokenType::Number)?.value)?;
 
         Ok(Command::SetFocalLength { length })
+    }
+
+    fn handle_create_composite(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop_expected(TokenType::Identifier)?.value;
+        let _ = self.pop_expected(TokenType::Begin)?;
+        let commands: Vec<Command> = vec![];
+
+        while let token = self.pop()? {
+            if token.token_type == TokenType::End {
+                break;
+            }
+
+            
+        }
+
+        Ok(Command::CreateComposite { name, commands })
     }
 
     fn convert_to_f32(parameter: String) -> Result<f32, Box<dyn Error>> {

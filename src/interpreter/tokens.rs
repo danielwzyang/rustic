@@ -13,6 +13,8 @@ pub enum TokenType {
     FilePath,
     Identifier,
     EasingFunction,
+    Begin,
+    End,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -22,6 +24,8 @@ pub enum Function {
     Save,
     Clear,
     SetCamera,
+    CreateComposite,
+    RunComposite,
 
     // TRANSFORMATIONS
     Push,
@@ -29,6 +33,7 @@ pub enum Function {
     Move,
     Scale,
     Rotate,
+    SaveCoordSystem,
 
     // EDGES
     Line,
@@ -62,7 +67,6 @@ pub enum Function {
     SetAllKnobs,
 
     // UNIMPLEMENTED BUT RECOGNIZED
-    SaveCoordSystem,
     GenerateRayFiles,
     SetFocalLength,
 }
