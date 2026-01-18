@@ -97,59 +97,62 @@ impl Parser {
 
         while !self.stack.is_empty() {
             let token = self.pop()?;
+            let command = self.get_command(token)?;
 
-            match token.token_type {
-                let command = get_command()?;
-
-                TokenType::Command(function) => {
-                    match function {
-                        Function::Display => { Command::Display }
-                        Function::Save => { self.handle_save()? }
-                        Function::Clear => { Command::Clear }
-                        Function::Push => { Command::Push }
-                        Function::Pop => { Command::Pop }
-                        Function::Move => { self.handle_move()? }
-                        Function::Scale => { self.handle_scale()? }
-                        Function::Rotate => { self.handle_rotate()? }
-                        Function::Line => { self.handle_line()? }
-                        Function::Circle => { self.handle_circle()? }
-                        Function::Hermite => { self.handle_hermite()? }
-                        Function::Bezier => { self.handle_bezier()? }
-                        Function::Polygon => { self.handle_polygon()? }
-                        Function::Box => { self.handle_box()? }
-                        Function::Sphere => { self.handle_sphere()? }
-                        Function::Torus => { self.handle_torus()? }
-                        Function::Cylinder => { self.handle_cylinder()? }
-                        Function::Cone => { self.handle_cone()? }
-                        Function::Mesh => { self.handle_mesh()? }
-                        Function::ClearLights => { Command::ClearLights }
-                        Function::AddLight => { self.handle_add_light()? }
-                        Function::SetAmbient => { self.handle_set_ambient()? }
-                        Function::DefineConstants => { self.handle_define_constants()? }
-                        Function::SetShading => { self.handle_set_shading()? }
-                        Function::SetCamera => { self.handle_set_camera()? }
-                        Function::SetBaseName => { self.handle_set_base_name()? }
-                        Function::SetKnob => { self.handle_set_knob()? }
-                        Function::SaveKnobList => { self.handle_save_knob_list()? }
-                        Function::Tween => { self.handle_tween()? }
-                        Function::SetFrames => { self.handle_set_frames()? }
-                        Function::VaryKnob => { self.handle_vary_knob()? }
-                        Function::SetAllKnobs => { self.handle_set_all_knobs()? }
-                        Function::SaveCoordSystem => { self.handle_save_coord_system()? }
-                        Function::GenerateRayFiles => { Command::GenerateRayFiles }
-                        Function::SetFocalLength => { self.handle_set_focal_length()? }
-                        Function::CreateComposite => { self.handle_create_composite()? }
-                        Function::RunComposite => { self.handle_run_composite()? }
-                    }
-                }
-
-                _ => {
-                    return Err(format!("{} -> Unexpected token: {} ({:?})", token.info, token.value, token.token_type).into())
-                }
-            }
+            commands.push(command);
         }
 
         Ok(commands)
+    }
+
+    fn get_command(&mut self, token: Token) -> Result<Command, Box<dyn Error>> {
+        match token.token_type {
+            TokenType::Command(function) => {
+                match function {
+                    Function::Display => { Ok(Command::Display) }
+                    Function::Save => { self.handle_save() }
+                    Function::Clear => { Ok(Command::Clear) }
+                    Function::Push => { Ok(Command::Push) }
+                    Function::Pop => { Ok(Command::Pop) }
+                    Function::Move => { self.handle_move() }
+                    Function::Scale => { self.handle_scale() }
+                    Function::Rotate => { self.handle_rotate() }
+                    Function::Line => { self.handle_line() }
+                    Function::Circle => { self.handle_circle() }
+                    Function::Hermite => { self.handle_hermite() }
+                    Function::Bezier => { self.handle_bezier() }
+                    Function::Polygon => { self.handle_polygon() }
+                    Function::Box => { self.handle_box() }
+                    Function::Sphere => { self.handle_sphere() }
+                    Function::Torus => { self.handle_torus() }
+                    Function::Cylinder => { self.handle_cylinder() }
+                    Function::Cone => { self.handle_cone() }
+                    Function::Mesh => { self.handle_mesh() }
+                    Function::ClearLights => { Ok(Command::ClearLights) }
+                    Function::AddLight => { self.handle_add_light() }
+                    Function::SetAmbient => { self.handle_set_ambient() }
+                    Function::DefineConstants => { self.handle_define_constants() }
+                    Function::SetShading => { self.handle_set_shading() }
+                    Function::SetCamera => { self.handle_set_camera() }
+                    Function::SetBaseName => { self.handle_set_base_name() }
+                    Function::SetKnob => { self.handle_set_knob() }
+                    Function::SaveKnobList => { self.handle_save_knob_list() }
+                    Function::Tween => { self.handle_tween() }
+                    Function::SetFrames => { self.handle_set_frames() }
+                    Function::VaryKnob => { self.handle_vary_knob() }
+                    Function::SetAllKnobs => { self.handle_set_all_knobs() }
+                    Function::SaveCoordSystem => { self.handle_save_coord_system() }
+                    Function::GenerateRayFiles => { Ok(Command::GenerateRayFiles) }
+                    Function::SetFocalLength => { self.handle_set_focal_length() }
+                    Function::CreateComposite => { self.handle_create_composite() }
+                    Function::RunComposite => { self.handle_run_composite() }
+                }
+            }
+
+            _ => {
+                return Err(format!("{} -> Unexpected token: {} ({:?})", token.info, token.value, token.token_type).into())
+            }
+        }
     }
 
     fn handle_save(&mut self) -> Result<Command, Box<dyn Error>> {
@@ -446,17 +449,33 @@ impl Parser {
     fn handle_create_composite(&mut self) -> Result<Command, Box<dyn Error>> {
         let name = self.pop_expected(TokenType::Identifier)?.value;
         let _ = self.pop_expected(TokenType::Begin)?;
-        let commands: Vec<Command> = vec![];
+        let mut commands: Vec<Command> = vec![];
+        let mut found_end = false;
 
-        while let token = self.pop()? {
+        while !self.stack.is_empty() {
+            let token = self.pop()?;
+
             if token.token_type == TokenType::End {
+                found_end = true;
                 break;
             }
 
-            
+            let command = self.get_command(token)?;
+
+            commands.push(command);
+        }
+
+        if !found_end {
+            return Err(format!("Please end block for composite command {} with the 'end' token.", name).into());
         }
 
         Ok(Command::CreateComposite { name, commands })
+    }
+
+    fn handle_run_composite(&mut self) -> Result<Command, Box<dyn Error>> {
+        let name = self.pop_expected(TokenType::Identifier)?.value;
+
+        Ok(Command::RunComposite { name  })
     }
 
     fn convert_to_f32(parameter: String) -> Result<f32, Box<dyn Error>> {

@@ -1,0 +1,42 @@
+constants bottom 0.7 0.6 0.1 0.5 0.4 0.1 0.4 0.3 0.1
+
+composite center
+begin
+    move 250 250 0
+end
+
+composite ice_cream
+begin
+    push
+        sphere top 0 50 0 50
+
+        rotate z 180
+        cone bottom 0 -30 0 50 100
+    pop
+end
+
+run_composite center
+
+push
+    // orange
+    push
+        move -130 0 0
+        rotate z 20
+        constants top 0.8 0.7 0.1 0.6 0.4 0.1 0.3 0.2 0.1
+        run_composite ice_cream
+    pop
+
+    // strawberry
+    constants top 0.8 0.7 0.1 0.5 0.4 0.1 0.5 0.4 0.1 
+    run_composite ice_cream
+
+    // vanilla
+    push
+        move 130 0 0
+        rotate z -20
+        constants top 0.7 0.7 0.1 0.7 0.7 0.1 0.7 0.7 0.1
+        run_composite ice_cream
+    pop
+pop
+
+display

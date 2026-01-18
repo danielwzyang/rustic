@@ -16,7 +16,7 @@ use std::{
 };
 
 use parser::Parser;
-use run_script::evaluate_commands;
+use run_script::{evaluate_commands, ScriptContext};
 use tokens::{TokenType, Function};
 
 static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
@@ -36,6 +36,9 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("x", TokenType::AxisOfRotation);
     map.insert("y", TokenType::AxisOfRotation);
     map.insert("z", TokenType::AxisOfRotation);
+
+    map.insert("begin", TokenType::Begin);
+    map.insert("end", TokenType::End);
     
     map.insert("line", TokenType::Command(Function::Line));
     map.insert("circle", TokenType::Command(Function::Circle));
@@ -70,6 +73,10 @@ static KEYWORDS: LazyLock<HashMap<&str, TokenType>> = LazyLock::new(|| {
     map.insert("easeOutExpo", TokenType::EasingFunction);
 
     map.insert("save_coord_system", TokenType::Command(Function::SaveCoordSystem));
+
+    map.insert("composite", TokenType::Command(Function::CreateComposite));
+    map.insert("run_composite", TokenType::Command(Function::RunComposite));
+
     map.insert("generate_rayfiles", TokenType::Command(Function::GenerateRayFiles));
     map.insert("focal", TokenType::Command(Function::SetFocalLength));
 
@@ -81,7 +88,7 @@ pub fn run_script(path: &str) -> Result<(), Box<dyn Error>> {
 
     let commands = Parser::new().generate_command_list(tokens)?;
 
-    evaluate_commands(commands)?;
+    evaluate_commands(&mut ScriptContext::new(), commands)?;
 
     Ok(())
 }

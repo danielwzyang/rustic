@@ -29,6 +29,7 @@ enum Symbol {
     Constants(ReflectionConstants),
     Knob(f32),
     CoordSystem(Matrix),
+    CompositeCommand(Vec<Command>),
 }
 
 enum CachedMesh {
@@ -36,7 +37,7 @@ enum CachedMesh {
     Texture((Matrix, Vec<(String, [[f32; 2]; 3])>, HashMap<String, MTL>)),
 }
 
-struct ScriptContext {
+pub struct ScriptContext {
     picture: Picture,
     edges: Matrix,
     polygons: Matrix,
@@ -50,7 +51,7 @@ struct ScriptContext {
 }
 
 impl ScriptContext {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             picture: Picture::new(DEFAULT_PICTURE_DIMENSIONS.0, DEFAULT_PICTURE_DIMENSIONS.1, 255, &DEFAULT_BACKGROUND_COLOR),
             edges: matrix::new(),
@@ -175,16 +176,26 @@ impl ScriptContext {
     fn save_coord_system(&mut self, name: String) {
         self.symbols.insert(name, Symbol::CoordSystem(self.coordinate_stack.peek()));
     }
+
+    fn save_composite_command(&mut self, name: String, commands: Vec<Command>) {
+        self.symbols.insert(name, Symbol::CompositeCommand(commands));
+    }
+
+    fn run_composite_command(&mut self, name: String) -> Result<(), Box<dyn Error>> {
+        if let Some(Symbol::CompositeCommand(commands)) = self.symbols.get(&name) {
+            evaluate_commands(self, commands.clone())
+        } else {
+            Err(format!("Composite command {} not found.", name).into())
+        }
+    } 
 }
 
-pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
-    let mut context = ScriptContext::new();
-
+pub fn evaluate_commands(context: &mut ScriptContext, commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
     let (num_frames, basename) = animation::first_pass(&commands)?;
 
     if num_frames == 0 {
         for command in commands {
-            execute_command(command, &mut context, false)?;
+            execute_command(command, context, false)?;
         }
     } else {
         let frame_knob_list = animation::second_pass(&commands, &num_frames)?;
@@ -198,7 +209,7 @@ pub fn evaluate_commands(commands: Vec<Command>) -> Result<(), Box<dyn Error>> {
             }
 
             for command in commands.clone() {
-                execute_command(command, &mut context, true)?;
+                execute_command(command, context, true)?;
             }
 
             if GENERATE_TEMPORARY_FRAME_FILES {
@@ -414,6 +425,14 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
 
         Command::SaveCoordSystem { name } => {
             context.save_coord_system(name);
+        }
+        
+        Command::CreateComposite { name, commands } => {
+            context.save_composite_command(name, commands);
+        }
+
+        Command::RunComposite { name } => {
+            context.run_composite_command(name)?;
         }
 
         _ => { }
