@@ -10,21 +10,27 @@ use crate::{
 };
 use super::tokens::{Token, TokenType, Function};
 
-// file paths + identifiers stored as String
 #[derive(Clone, Debug)]
 pub enum Command {
     Display,
     Save { file_path: String },
+    SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 },
+    CreateComposite { name: String, commands: Vec<Command> },
+    RunComposite { name: String },
+
     Clear,
     Push,
     Pop,
     Move { a: f32, b: f32, c: f32, knob: Option<String> },
     Scale { a: f32, b: f32, c: f32, knob: Option<String> },
     Rotate { axis: Rotation, degrees: f32, knob: Option<String> },
+    SaveCoordSystem { name: String },
+
     Line {  x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32 },
     Circle { x: f32, y: f32, z: f32, r: f32 },
     Hermite { x0: f32, y0: f32, x1: f32, y1: f32, rx0: f32, ry0: f32, rx1: f32, ry1: f32 },
     Bezier { x0: f32, y0: f32, x1: f32, y1: f32, x2: f32, y2: f32, x3: f32, y3: f32 },
+
     Polygon { constants: Option<String>, x0: f32, y0: f32, z0: f32, x1: f32, y1: f32, z1: f32, x2: f32, y2: f32, z2: f32, coord_system: Option<String> },
     Box { constants: Option<String>, x: f32, y: f32, z: f32, w: f32, h: f32, d: f32, coord_system: Option<String> },
     Sphere { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, coord_system: Option<String> },
@@ -32,12 +38,13 @@ pub enum Command {
     Cylinder { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32, coord_system: Option<String> },
     Cone { constants: Option<String>, x: f32, y: f32, z: f32, r: f32, h: f32, coord_system: Option<String> },
     Mesh { constants: Option<String>, file_path: String, coord_system: Option<String> },
+
     ClearLights,
     AddLight { r: f32, g: f32, b: f32, x: f32, y: f32, z: f32 },
     SetAmbient { r: f32, g: f32, b: f32 },
     DefineConstants { name: String, kar: f32, kdr: f32, ksr: f32, kag: f32, kdg: f32, ksg: f32, kab: f32, kdb: f32, ksb: f32 },
     SetShading { shading_mode: ShadingMode },
-    SetCamera { eye_x: f32, eye_y: f32, eye_z: f32, aim_x: f32, aim_y: f32, aim_z: f32 },
+
     SetBaseName { name: String },
     SetKnob { name: String, value: f32 },
     SaveKnobList { name: String },
@@ -45,11 +52,9 @@ pub enum Command {
     SetFrames { num_frames: usize },
     VaryKnob { knob: String, start_frame: usize, end_frame: usize, start_val: f32, end_val: f32, easing: Option<String> },
     SetAllKnobs { value: f32 },
-    SaveCoordSystem { name: String },
+
     GenerateRayFiles,
     SetFocalLength { length: f32 },
-    CreateComposite { name: String, commands: Vec<Command> },
-    RunComposite { name: String },
 }
 
 pub struct Parser {
