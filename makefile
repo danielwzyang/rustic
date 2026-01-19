@@ -19,4 +19,4 @@ animate:
 	animate temp_frames/${B}*.png
 
 gif:
-	convert -delay 1.7 temp_frames/*.png output.gif
+	convert -delay 1.7 temp_frames/${B}*.png output.gif
