@@ -25,6 +25,7 @@ use super::{
 
 type Matrix = Vec<[f32; 4]>;
 
+#[derive(Debug)]
 enum Symbol {
     Constants(ReflectionConstants),
     Knob(f32),
@@ -90,7 +91,7 @@ impl ScriptContext {
             if let Some(symbol) = self.symbols.get(name) {
                 match symbol {
                     Symbol::Constants(constants) => reflection_constants = constants,
-                    _ => panic!("Expected symbol to be lighting constants: {}", name)
+                    _ => panic!("Expected symbol to be lighting constants: {:?}", symbol)
                 }
             } else {
                 panic!("Symbol not found in table: {}", name);
@@ -101,7 +102,7 @@ impl ScriptContext {
             if let Some(symbol) = self.symbols.get(name) {
                 match symbol {
                     Symbol::CoordSystem(transform) => matrix::multiply(&transform, &mut self.polygons),
-                    _ => panic!("Expected symbol to be coordinate system: {}", name)
+                    _ => panic!("Expected symbol to be coordinate system: {:?}", symbol)
                 }
             } else {
                 panic!("Symbol not found in table: {}", name);
@@ -121,7 +122,7 @@ impl ScriptContext {
             if let Some(symbol) = self.symbols.get(name) {
                 match symbol {
                     Symbol::CoordSystem(transform) => matrix::multiply(&transform, &mut self.polygons),
-                    _ => panic!("Expected symbol to be coordinate system: {}", name)
+                    _ => panic!("Expected symbol to be coordinate system: {:?}", symbol)
                 }
             } else {
                 panic!("Symbol not found in table: {}", name);
@@ -377,15 +378,13 @@ fn execute_command(command: Command, context: &mut ScriptContext, animation: boo
         }
 
         Command::DefineConstants { name, kar, kdr, ksr, kag, kdg, ksg, kab, kdb, ksb } => {
-            if !animation {
-                let constants = ReflectionConstants {
-                    ambient: [kar, kag, kab],
-                    diffuse: [kdr, kdg, kdb],
-                    specular: [ksr, ksg, ksb],
-                };
+            let constants = ReflectionConstants {
+                ambient: [kar, kag, kab],
+                diffuse: [kdr, kdg, kdb],
+                specular: [ksr, ksg, ksb],
+            };
 
-                context.symbols.insert(name, Symbol::Constants(constants));
-            }
+            context.symbols.insert(name, Symbol::Constants(constants));
         }
 
         Command::SetShading { shading_mode } => {

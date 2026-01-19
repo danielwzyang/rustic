@@ -11,7 +11,7 @@ pub struct LightingConfig {
     // note: viewer vector is always <0, 0, 1> so all the math for backface culling and lighting is hardcoded
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct ReflectionConstants {
     pub ambient: Vector,
     pub diffuse: Vector,

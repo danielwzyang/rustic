@@ -1,14 +1,54 @@
 // https://sketchfab.com/3d-models/goldeneye-007-n64-james-bond-c7421e107d1e4e06bfbf63af1021b16f
 
+constants dark_blue 0.15 0.15 0.15 0.15 0.15 0.15 0.2 0.2 0.2
+
 frames 200
 basename bond
 
-move 250 50 0
-scale 6 6 6
-rotate x 20
-rotate y 360 spin
+// composite commands
+composite the_names_bond_james_bond
+begin
+    push
+        move 0 -220 -20
+        scale 5 5 5
+        mesh
+        ../obj/bond/bond.obj
+    pop
+end
 
-mesh
-../obj/bond/bond.obj
+composite hat
+begin
+    push
+        move -2 130 -5
+        rotate z 10
+        shading phong
+        cone dark_blue 0 0 0 20 30 
+        torus dark_blue 0 0 0 2 20
+    pop
+end
 
-vary spin 0 199 0 1
+composite platform
+begin
+    push
+        move 0 -220 0
+        // relative coord system
+        save_coord_system wow_coords_awesome
+    pop
+
+    shading gouraud
+    cylinder dark_blue 0 0 0 80 20 wow_coords_awesome
+end
+
+push
+    move 250 280 0
+    rotate y 360 spin_y
+    rotate z 3 spin_z
+
+    run_composite the_names_bond_james_bond
+    run_composite platform
+    run_composite hat
+pop
+
+vary spin_y 0 199 0 2
+vary spin_z1 0 99 -1 1 easeInCubic
+vary spin_z2 100 199 1 -1 easeOutCubic
