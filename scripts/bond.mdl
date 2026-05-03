@@ -2,7 +2,7 @@
 
 constants dark_blue 0.15 0.15 0.15 0.15 0.15 0.15 0.2 0.2 0.2
 
-frames 200
+frames 90
 basename bond
 
 // composite commands
@@ -49,6 +49,6 @@ push
     run_composite hat
 pop
 
-vary spin_y 0 199 0 2
-vary spin_z1 0 99 -1 1 easeInCubic
-vary spin_z2 100 199 1 -1 easeOutCubic
+vary spin_y 0 89 0 1
+vary spin_z1 0 44 -1 1 easeInCubic
+vary spin_z2 45 89 1 -1 easeOutCubic
