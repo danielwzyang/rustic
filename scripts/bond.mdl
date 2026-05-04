@@ -42,7 +42,7 @@ end
 push
     move 250 280 0
     rotate y 360 spin_y
-    rotate z 3 spin_z
+    rotate z 3
 
     run_composite the_names_bond_james_bond
     run_composite platform
@@ -50,5 +50,3 @@ push
 pop
 
 vary spin_y 0 89 0 1
-vary spin_z1 0 44 -1 1 easeInCubic
-vary spin_z2 45 89 1 -1 easeOutCubic
